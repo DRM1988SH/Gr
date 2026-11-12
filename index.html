@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>برنامج إدارة الموظفين - شركة الجزيرة الخضراء</title>
+<style>
+:root{--g:#3CB043;--gd:#2b8a31;--gl:#e8f6e9;--bd:#d6dfd6;--tx:#1f2a1f;--mut:#6b776b;--red:#d9534f;--amb:#f0ad4e}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:Tahoma,"Segoe UI",Arial,sans-serif;background:#f3f6f3;color:var(--tx);font-size:15px;direction:rtl}
+#hdr{position:fixed;top:0;left:0;right:0;height:70px;background:var(--g);color:#fff;display:flex;align-items:center;gap:12px;padding:0 16px;z-index:40;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+#hdr h1{margin:0;font-size:20px;flex:1;line-height:1.3}
+#burger{display:none;background:rgba(255,255,255,.2);border:0;color:#fff;font-size:24px;width:42px;height:42px;border-radius:8px;cursor:pointer}
+#userChip{background:rgba(255,255,255,.2);padding:6px 12px;border-radius:20px;font-size:13px;white-space:nowrap}
+#ftr{position:fixed;bottom:0;left:0;right:0;height:20px;line-height:20px;background:#2b2f2b;color:#cfd6cf;font-size:11px;text-align:center;z-index:40}
+#side{position:fixed;top:70px;bottom:20px;right:0;width:230px;background:#fff;border-left:1px solid var(--bd);overflow:auto;z-index:30;padding:10px 0;transition:transform .25s}
+#side a{display:flex;align-items:center;gap:10px;padding:13px 18px;color:var(--tx);text-decoration:none;cursor:pointer;border-right:4px solid transparent;font-weight:600}
+#side a:hover{background:var(--gl)}
+#side a.active{background:var(--gl);border-right-color:var(--g);color:var(--gd)}
+#side hr{border:0;border-top:1px solid var(--bd);margin:8px 0}
+#main{margin:70px 230px 20px 0;padding:18px;min-height:calc(100vh - 90px)}
+body.nologin #side,body.nologin #burger,body.nologin #userChip{display:none}
+body.nologin #main{margin-right:0}
+.screen{display:none}.screen.on{display:block}
+.card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+h2{margin:0 0 14px;color:var(--gd);font-size:20px}
+h3{margin:0 0 10px;font-size:16px}
+label.f{display:block;font-size:13px;color:var(--mut);margin-bottom:4px}
+input[type=text],input[type=number],input[type=date],input[type=month],input[type=password],select{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;font:inherit;background:#fff;color:var(--tx)}
+input:focus,select:focus{outline:2px solid var(--g);border-color:var(--g)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.row>div{flex:1;min-width:180px}
+.btn{display:inline-block;background:var(--g);color:#fff;border:0;padding:10px 18px;border-radius:8px;font:inherit;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--gd)}
+.btn:disabled{background:#aab5aa;cursor:not-allowed}
+.btn.light{background:#eef2ee;color:var(--tx);border:1px solid var(--bd)}
+.btn.light:hover{background:#e2e9e2}
+.btn.red{background:var(--red)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.tw{overflow-x:auto;border:1px solid var(--bd);border-radius:10px;background:#fff}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{border:1px solid var(--bd);padding:9px 10px;text-align:center;vertical-align:middle}
+th{background:var(--g);color:#fff;font-weight:700}
+tbody tr:nth-child(even){background:#fafcfa}
+td.daycell{background:var(--gl);font-weight:700}
+td.daycell small{display:block;font-weight:400;color:var(--mut)}
+td.muted,.muted{color:var(--mut)}
+td select{min-width:120px;font-weight:700}
+select.sP{background:#e3f6e4;border-color:var(--g)}select.sA{background:#fde7e6;border-color:var(--red)}select.sV{background:#fff3dc;border-color:var(--amb)}
+img.sig{height:38px;max-width:120px;object-fit:contain}
+.appr{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
+.appr .b{border:1px dashed var(--g);border-radius:10px;padding:12px;text-align:center;min-height:130px;background:#fff}
+.appr .b .r{font-weight:700;color:var(--gd);margin-bottom:4px}
+.appr .b img{height:50px;max-width:150px;object-fit:contain;margin-top:6px}
+.banner{padding:10px 14px;border-radius:8px;margin:12px 0;font-weight:700}
+.banner.ok{background:#e3f6e4;color:var(--gd);border:1px solid var(--g)}
+.banner.info{background:#fff3dc;color:#8a5a00;border:1px solid var(--amb)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.chip{padding:5px 12px;border-radius:16px;font-size:13px;font-weight:700;background:var(--gl)}
+.pad canvas{width:100%;max-width:400px;height:130px;border:1px dashed var(--g);border-radius:8px;background:#fff;touch-action:none;display:block}
+.pad .pb{display:flex;gap:8px;margin-top:6px}
+.login{max-width:400px;margin:40px auto;text-align:center}
+.login .logo{font-size:48px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--bd);border-top:4px solid var(--g);border-radius:10px;padding:14px;text-align:center}
+.stat b{display:block;font-size:28px;color:var(--gd)}
+.stat span{font-size:13px;color:var(--mut)}
+.bd{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;white-space:nowrap}
+.bd.new{background:#fff3dc;color:#8a5a00}
+.bd.progress,.bd.approved,.bd.purchased,.bd.partial{background:#e0efff;color:#1b5a9a}
+.bd.done,.bd.issued,.bd.received{background:#e3f6e4;color:var(--gd)}
+.bd.rejected{background:#fde7e6;color:#a33}
+textarea{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;font:inherit;min-height:70px;background:#fff;color:var(--tx)}
+td.r{text-align:right}
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+.dlg{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:380px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.dlg p{margin:0 0 14px;font-weight:700;line-height:1.6}
+.dlg input{margin-bottom:14px}
+.dbtn{display:flex;gap:10px;justify-content:center}
+#toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:8px;z-index:100;display:none;max-width:90%}
+#printArea{display:none}
+@media (max-width:800px){
+ #burger{display:block}
+ #hdr h1{font-size:14px}
+ #side{transform:translateX(100%)}
+ body.open #side{transform:none;box-shadow:-4px 0 12px rgba(0,0,0,.25)}
+ #main{margin-right:0;padding:12px}
+}
+@media print{
+ @page{size:A4 landscape;margin:10mm}
+ body>*:not(#printArea){display:none!important}
+ body{background:#fff}
+ #printArea{display:block!important;direction:rtl;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ #printArea h1{text-align:center;color:#2b8a31;font-size:24px;margin:0 0 10px}
+ #printArea .pl{display:flex;justify-content:space-between;direction:ltr;font-size:16px;font-weight:700;margin-bottom:10px}
+ #printArea table{min-width:0;font-size:13px}
+ #printArea th{background:#3CB043!important;color:#fff!important}
+ #printArea tr{page-break-inside:avoid}
+ #printArea thead{display:table-header-group}
+ #printArea td.daycell{background:#e8f6e9!important}
+}
+.nbadge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#d9534f;color:#fff;font-size:12px;font-weight:700;margin-inline-start:auto}
+#side a{position:relative}
+.bellBtn{position:relative;background:rgba(255,255,255,.2);border:0;color:#fff;font-size:20px;width:42px;height:42px;border-radius:50%;cursor:pointer;flex:0 0 auto}
+.bellBtn .nbadge{position:absolute;top:-4px;left:-4px;margin:0}
+.bellPanel{position:fixed;top:78px;left:12px;background:#fff;color:var(--tx);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:60;min-width:240px;padding:6px;display:none}
+.bellPanel button{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;background:none;border:0;padding:10px;font:inherit;cursor:pointer;border-radius:6px;color:var(--tx)}
+.bellPanel button:hover{background:var(--gl)}
+</style>
+</head>
+<body class="nologin">
+
+<header id="hdr">
+  <button id="burger" aria-label="القائمة">☰</button>
+  <h1>شركة الجزيرة الخضراء لتجارة المواشي والأغنام</h1>
+  <button id="bell" class="bellBtn" aria-label="الإشعارات">🔔<span class="nbadge" id="bellN" style="display:none"></span></button>
+  <span id="userChip"></span>
+</header>
+
+<aside id="side">
+  <a data-go="dash">📊 لوحة التحكم</a>
+  <a data-go="daily">📋 الحضور والانصراف اليومي</a>
+  <a data-go="log">🗓️ سجل الحضور والانصراف</a>
+  <a data-go="sum">📈 ملخص الموظفين الشهري</a>
+  <a data-go="mat">📦 طلبات المواد</a>
+  <a data-go="maint">🛠️ الصيانة</a>
+  <a data-go="store">🏬 المخزن</a>
+  <a data-go="pur">🛒 المشتريات</a>
+  <a data-go="fin">💰 المالية</a>
+  <a data-go="pay">💵 الرواتب</a>
+  <a data-go="users" data-admin>👤 إعدادات المستخدمين</a>
+  <a data-go="sites" data-admin>🏭 المواقع والموظفون</a>
+  <a data-go="backup" data-admin>💾 النسخ الاحتياطي</a>
+  <hr>
+  <a id="logout">🚪 تسجيل الخروج</a>
+</aside>
+
+<main id="main">
+
+  <!-- 1: تسجيل الدخول -->
+  <section class="screen" id="s-login">
+    <div class="card login">
+      <div class="logo">🐑</div>
+      <h2>تسجيل دخول الإدارة</h2>
+      <label class="f" style="text-align:right">الموقع الرئيسي</label>
+      <select id="lgSite" style="margin-bottom:12px"></select>
+      <label class="f" style="text-align:right">الرقم الوظيفي</label>
+      <input type="text" id="lgNo" inputmode="numeric" autocomplete="off" placeholder="مثال: 700">
+      <p class="muted" style="font-size:12px">اختر موقعك الرئيسي ثم أدخل رقمك الوظيفي. مدير المتابعة ومدير النظام يختاران «الإدارة العامة».</p>
+      <button class="btn" id="lgBtn" style="width:100%">دخول</button>
+    </div>
+  </section>
+
+  <!-- 2: الحضور اليومي -->
+  <section class="screen" id="s-daily">
+    <div class="card">
+      <h2>الحضور والانصراف اليومي</h2>
+      <div class="row">
+        <div><label class="f">الموقع</label><select id="dSite"></select></div>
+        <div><label class="f">التاريخ (ميلادي)</label><input type="date" id="dDate"></div>
+      </div>
+      <div id="dBanner"></div>
+      <div class="tw"><table>
+        <thead><tr><th style="width:60px">م</th><th>اسم الموظف</th><th>الوظيفة</th><th>حالة الحضور</th><th>توقيع الموظف</th></tr></thead>
+        <tbody id="dBody"></tbody>
+      </table></div>
+      <div class="appr" id="dAppr"></div>
+      <div style="margin-top:16px;text-align:center"><button class="btn" id="dSubmit">تقديم التقرير اليومي</button></div>
+    </div>
+  </section>
+
+  <!-- 3: سجل الحضور -->
+  <section class="screen" id="s-log">
+    <div class="card">
+      <h2>سجل الحضور والانصراف</h2>
+      <div class="row">
+        <div><label class="f">الموقع</label><select id="lSite"></select></div>
+        <div><label class="f">شهر التقرير</label><input type="month" id="lMonth"></div>
+        <div style="flex:0 0 auto"><button class="btn" id="lPdf">⬇️ تصدير PDF</button></div>
+      </div>
+      <div class="chips" id="lChips"></div>
+      <div class="tw"><table>
+        <thead><tr><th style="width:90px">اليوم</th><th>اسم الموظف</th><th>الوظيفة</th><th>حالة الحضور</th><th>التوقيع</th></tr></thead>
+        <tbody id="lBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- 4: إعدادات المستخدمين -->
+  <section class="screen" id="s-users">
+    <div class="card">
+      <h2>إضافة مستخدم</h2>
+      <div class="row">
+        <div><label class="f">الاسم</label><input type="text" id="uName"></div>
+        <div><label class="f">الرقم الوظيفي</label><input type="text" id="uNo" inputmode="numeric"></div>
+        <div><label class="f">الدور</label><select id="uRole">
+          <option value="700">مشرف الموقع (700)</option>
+          <option value="600">مشرف المنطقة (600)</option>
+          <option value="500">مدير المتابعة (500)</option>
+          <option value="gm">المدير العام</option><option value="store">مدير المخزن</option><option value="purch">مدير المشتريات</option><option value="acc">مدير الحسابات</option><option value="maint">مدير الصيانة</option><option value="maint">مسؤول الصيانة</option><option value="admin">مدير النظام (أدمن)</option></select></div>
+        <div id="uMainWrap"><label class="f">الموقع الرئيسي (لمشرف الموقع / مشرف المنطقة)</label><select id="uMain"></select></div>
+      </div>
+      <div style="margin-top:12px"><label class="f">توقيع المستخدم (يظهر في الاعتمادات - اختياري)</label><div class="pad" id="uPad"></div></div>
+      <div style="margin-top:12px"><button class="btn" id="uAdd">إضافة المستخدم</button></div>
+    </div>
+    <div class="card">
+      <h3>المستخدمون</h3>
+      <div class="tw"><table>
+        <thead><tr><th>الاسم</th><th>الرقم الوظيفي</th><th>الدور</th><th>الموقع الرئيسي</th><th>التوقيع</th><th></th></tr></thead>
+        <tbody id="uBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- 5: المواقع والموظفون -->
+  <section class="screen" id="s-sites">
+    <div class="card">
+      <h2>الموقع الرئيسي</h2>
+      <div class="row">
+        <div><label class="f">اسم الموقع الرئيسي</label><input type="text" id="mnName"></div>
+        <div style="flex:0 0 auto"><button class="btn" id="mnAdd">إضافة الموقع الرئيسي</button></div>
+      </div>
+      <div class="tw" style="margin-top:12px"><table>
+        <thead><tr><th>الموقع الرئيسي</th><th>عدد المواقع الفرعية</th><th></th></tr></thead>
+        <tbody id="mnBody"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>إضافة موقع فرعي</h2>
+      <div class="row">
+        <div><label class="f">الموقع الرئيسي</label><select id="sMain"></select></div>
+        <div><label class="f">اسم الموقع الفرعي</label><input type="text" id="sName"></div>
+        <div style="flex:0 0 auto"><button class="btn" id="sAdd">إضافة الموقع الفرعي</button></div>
+      </div>
+    </div>
+    <div class="card" id="empCard">
+      <h2>موظفو الموقع الفرعي</h2>
+      <div class="row">
+        <div><label class="f">الموقع الفرعي</label><select id="eSite"></select></div>
+        <div style="flex:0 0 auto"><button class="btn light sm" id="sRen">تعديل الاسم</button> <button class="btn red sm" id="sDel">حذف الموقع</button></div>
+      </div>
+      <div class="card" style="margin:14px 0;background:#fafcfa">
+        <h3>إضافة موظف</h3>
+        <div class="row">
+          <div><label class="f">اسم الموظف</label><input type="text" id="eName"></div>
+          <div><label class="f">الوظيفة</label><select id="eJob"></select></div>
+        </div>
+        <div style="margin-top:12px"><label class="f">توقيع الموظف (ارسم أو ارفع صورة)</label><div class="pad" id="ePad"></div></div>
+        <div style="margin-top:12px"><button class="btn" id="eAdd">إضافة الموظف</button></div>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th style="width:60px">م</th><th>الاسم</th><th>الوظيفة</th><th>التوقيع</th><th></th></tr></thead>
+        <tbody id="eBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- لوحة التحكم -->
+  <section class="screen" id="s-dash">
+    <div class="card">
+      <h2>لوحة التحكم</h2>
+      <p class="muted" id="hDate" style="margin:0 0 12px"></p>
+      <div class="stats" id="hStats2"></div>
+      <div id="hAtt"><div class="stats" id="hStats"></div>
+      <h3>حالة تقارير اليوم</h3>
+      <div class="tw"><table>
+        <thead><tr><th>الموقع</th><th>عدد الموظفين</th><th>حالة التقرير</th><th>حضور</th><th>غياب</th><th>إجازة</th><th></th></tr></thead>
+        <tbody id="hBody"></tbody>
+      </table></div></div>
+    </div>
+  </section>
+
+  <!-- ملخص الموظفين الشهري -->
+  <section class="screen" id="s-sum">
+    <div class="card">
+      <h2>ملخص الموظفين الشهري</h2>
+      <div class="row">
+        <div><label class="f">الموقع</label><select id="mSite"></select></div>
+        <div><label class="f">شهر التقرير</label><input type="month" id="mMonth"></div>
+        <div style="flex:0 0 auto"><button class="btn" id="mPdf">⬇️ تصدير PDF</button></div>
+      </div>
+      <div class="chips" id="mChips"></div>
+      <div class="tw"><table>
+        <thead><tr><th style="width:60px">م</th><th>اسم الموظف</th><th>الوظيفة</th><th>حضور</th><th>غياب</th><th>إجازة</th><th>نسبة الحضور</th></tr></thead>
+        <tbody id="mBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- النسخ الاحتياطي -->
+  <section class="screen" id="s-backup">
+    <div class="card">
+      <h2>النسخ الاحتياطي واستعادة البيانات</h2>
+      <p class="muted">البيانات محفوظة في ذاكرة هذا المتصفح فقط. احتفظ بنسخة احتياطية بشكل دوري، أو استخدمها لنقل البيانات إلى جهاز آخر.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="bkExport">⬇️ تنزيل نسخة احتياطية</button>
+        <label class="btn light" style="margin:0">⬆️ استعادة من نسخة<input type="file" id="bkImport" accept="application/json,.json" hidden></label>
+      </div>
+    </div>
+  </section>
+
+  <!-- طلبات المواد -->
+  <section class="screen" id="s-mat">
+    <div class="card" id="mrNew">
+      <h2>طلب مواد من المخزن</h2>
+      <div class="row"><div><label class="f">الموقع</label><select id="mrSite"></select></div></div>
+      <p class="muted" id="mrEmpty" style="display:none">لا توجد أصناف في المخزن بعد. اطلب من أمين المخزن إضافتها.</p>
+      <div id="mrItems" style="margin-top:10px"></div>
+      <button class="btn light sm" id="mrAddRow" type="button">+ إضافة صنف</button>
+      <div style="margin-top:10px"><label class="f">ملاحظات (اختياري)</label><input type="text" id="mrNote"></div>
+      <div style="margin-top:12px"><button class="btn" id="mrSend">إرسال الطلب</button></div>
+    </div>
+    <div class="card">
+      <h2>الطلبات</h2>
+      <div class="row"><div><label class="f">الحالة</label><select id="mrFilter"><option value="">الكل</option><option value="new">جديد</option><option value="partial">صرف جزئي</option><option value="issued">تم الصرف</option><option value="rejected">مرفوض</option></select></div></div>
+      <div class="tw" style="margin-top:12px"><table style="min-width:760px">
+        <thead><tr><th>الرقم</th><th>التاريخ</th><th>الموقع / مقدّم الطلب</th><th>الأصناف</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <tbody id="mrBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- الصيانة -->
+  <section class="screen" id="s-maint">
+    <div class="card" id="mtNew">
+      <h2>طلب صيانة</h2>
+      <div class="row">
+        <div><label class="f">الموقع</label><select id="mtSite"></select></div>
+        <div><label class="f">نوع الصيانة</label><select id="mtType"></select></div>
+        <div><label class="f">الأولوية</label><select id="mtPri"></select></div>
+      </div>
+      <div style="margin-top:10px"><label class="f">وصف العطل / المطلوب</label><textarea id="mtDesc"></textarea></div>
+      <div style="margin-top:12px"><label class="f">صورة أو ملف PDF للعطل (اختياري)</label><input type="file" id="mtFile" multiple accept="image/*,application/pdf"></div>
+      <div style="margin-top:12px"><button class="btn" id="mtSend">إرسال طلب الصيانة</button></div>
+    </div>
+    <div class="card" id="mpNew">
+      <h2>طلب شراء مواد للصيانة</h2>
+      <div class="row">
+        <div><label class="f">مرتبط بطلب صيانة (اختياري)</label><select id="mpLink"></select></div>
+        <div><label class="f">اسم المادة</label><input type="text" id="mpName"></div>
+        <div><label class="f">الوحدة</label><input type="text" id="mpUnit" value="قطعة"></div>
+        <div><label class="f">الكمية</label><input type="number" id="mpQty" min="1" value="1"></div>
+        <div><label class="f">التكلفة التقديرية</label><input type="number" id="mpEst" min="0" value="0"></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="mpSend">إرسال طلب الشراء للمشتريات</button></div>
+    </div>
+    <div class="card">
+      <h2>طلبات الصيانة</h2>
+      <div class="row"><div><label class="f">الحالة</label><select id="mtFilter"><option value="">الكل</option><option value="new">جديد</option><option value="approved">معتمد</option><option value="progress">قيد التنفيذ</option><option value="done">مكتمل</option><option value="rejected">مرفوض</option></select></div></div>
+      <div class="tw" style="margin-top:12px"><table style="min-width:820px">
+        <thead><tr><th>الرقم</th><th>التاريخ</th><th>الموقع / مقدّم الطلب</th><th>النوع</th><th>الوصف</th><th>الأولوية</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <tbody id="mtBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- المخزن -->
+  <section class="screen" id="s-store">
+    <div class="card" id="stNew">
+      <h2>إضافة صنف للمخزن</h2>
+      <div class="row">
+        <div><label class="f">اسم الصنف</label><input type="text" id="stName"></div>
+        <div><label class="f">الوحدة</label><input type="text" id="stUnit" value="قطعة"></div>
+        <div><label class="f">الرصيد الافتتاحي</label><input type="number" id="stQty" min="0" value="0"></div>
+        <div><label class="f">الحد الأدنى للتنبيه</label><input type="number" id="stMin" min="0" value="0"></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="stAdd">إضافة الصنف</button></div>
+    </div>
+    <div class="card">
+      <h2>أرصدة المخزن</h2>
+      <div class="tw"><table style="min-width:680px">
+        <thead><tr><th>الصنف</th><th>الوحدة</th><th>الرصيد</th><th>الحد الأدنى</th><th>الحالة</th><th>إجراء</th></tr></thead>
+        <tbody id="stBody"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3>آخر حركات المخزن</h3>
+      <div class="tw"><table>
+        <thead><tr><th>التاريخ</th><th>الصنف</th><th>النوع</th><th>الكمية</th><th>المرجع</th><th>بواسطة</th></tr></thead>
+        <tbody id="mvBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- المشتريات -->
+  <section class="screen" id="s-pur">
+    <div class="card" id="puNew">
+      <h2>طلب شراء</h2>
+      <p class="muted" id="puEmpty" style="display:none">لا توجد أصناف في المخزن. أضف الصنف أولاً من شاشة المخزن.</p>
+      <div class="row" id="puForm">
+        <div><label class="f">الصنف</label><select id="puItem"></select></div>
+        <div><label class="f">الكمية</label><input type="number" id="puQty" min="1" value="1"></div>
+        <div><label class="f">التكلفة التقديرية (اختياري)</label><input type="number" id="puEst" min="0" value="0"></div>
+        <div style="flex:0 0 auto"><button class="btn" id="puSend">إرسال الطلب</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>طلبات الشراء</h2>
+      <div class="row"><div><label class="f">الحالة</label><select id="puFilter"><option value="">الكل</option><option value="new">بانتظار الاعتماد</option><option value="pmok">بانتظار المدير العام</option><option value="approved">معتمد</option><option value="purchased">تم الشراء</option><option value="received">تم الاستلام</option><option value="rejected">مرفوض</option></select></div></div>
+      <div class="tw" style="margin-top:12px"><table style="min-width:820px">
+        <thead><tr><th>الرقم</th><th>التاريخ</th><th>الصنف</th><th>الكمية</th><th>المصدر</th><th>الحالة</th><th>تفاصيل</th><th>إجراء</th></tr></thead>
+        <tbody id="puBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- المالية -->
+  <section class="screen" id="s-fin">
+    <div class="stats" id="faStats"></div>
+    <div class="card" id="faNew">
+      <h3>تسجيل منصرف آخر</h3>
+      <div class="row">
+        <div><label class="f">النوع</label><select id="faCat"></select></div>
+        <div><label class="f">البيان</label><input type="text" id="faDesc"></div>
+        <div><label class="f">المبلغ</label><input type="number" id="faAmt" min="0" step="0.01"></div>
+        <div><label class="f">الفاتورة (صورة أو PDF - اختياري)</label><input type="file" id="faFile" multiple accept="image/*,application/pdf"></div>
+        <div style="flex:0 0 auto"><button class="btn" id="faAdd">تسجيل</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>سجل المنصرفات (المشتريات والصيانة والرواتب والمنصرفات الأخرى)</h2>
+      <div class="tw"><table style="min-width:760px">
+        <thead><tr><th>التاريخ</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th>بواسطة</th><th>إجراء</th></tr></thead>
+        <tbody id="faBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- الرواتب -->
+  <section class="screen" id="s-pay">
+    <div class="card">
+      <h2>كشف الرواتب</h2>
+      <div class="row">
+        <div><label class="f">شهر الكشف</label><input type="month" id="payMonth"></div>
+        <div style="flex:0 0 auto"><span id="payStatus"></span></div>
+      </div>
+      <div id="payEdit" style="margin-top:12px">
+        <div class="row">
+          <div><label class="f">اسم الموظف</label><input type="text" id="payName"></div>
+          <div><label class="f">الراتب</label><input type="number" id="paySal" min="0" step="0.01"></div>
+          <div style="flex:0 0 auto"><button class="btn light" id="payAddLine">إضافة للكشف</button></div>
+        </div>
+      </div>
+      <div class="tw" style="margin-top:12px"><table style="min-width:520px">
+        <thead><tr><th style="width:60px">م</th><th>اسم الموظف</th><th>الراتب</th><th></th></tr></thead>
+        <tbody id="payBody"></tbody>
+      </table></div>
+      <div id="payActs" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h3>كشوف الرواتب</h3>
+      <div class="tw"><table style="min-width:620px">
+        <thead><tr><th>الشهر</th><th>عدد الموظفين</th><th>الإجمالي</th><th>الحالة</th><th>الاعتماد</th></tr></thead>
+        <tbody id="payList"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="ftr">© شركة الجزيرة الخضراء لتجارة المواشي والأغنام</footer>
+<div id="toast"></div>
+<div id="bellPanel" class="bellPanel"></div>
+<div id="printArea"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const KEY='jazira_hr_v1';
+const JOBS=['مشرف المسلخ','مشرف النظافة','محاسب','قصاب','عامل نظافة','حمال'];
+const ROLES={'700':'مشرف الموقع','600':'مشرف المنطقة','500':'مدير المتابعة','gm':'المدير العام','store':'مدير المخزن','purch':'مدير المشتريات','acc':'مدير الحسابات','maint':'مدير الصيانة','admin':'مدير النظام (أدمن)'};
+const ATT=['700','600','500','admin'];
+const ACCESS={dash:null,daily:ATT,log:ATT,sum:ATT,
+  mat:['700','600','500','store','gm','admin'],maint:['700','600','500','maint','gm','admin'],
+  store:['store','purch','500','gm','admin'],pur:['purch','store','500','gm','admin'],
+  fin:['gm','acc','admin'],pay:['gm','acc','admin'],
+  users:['admin'],sites:['admin'],backup:['admin']};
+function canSee(n){const a=ACCESS[n],u=me();if(u&&u.role==='maint'&&n!=='maint')return false;return !!u&&(a===null||a.includes(u.role))}
+function has(...r){const u=me();return !!u&&(u.role==='admin'||r.includes(u.role))}
+const MATS={new:'جديد',issued:'تم الصرف',partial:'صرف جزئي',rejected:'مرفوض'};
+const MNTS={new:'جديد',approved:'معتمد',progress:'قيد التنفيذ',done:'مكتمل',rejected:'مرفوض'};
+const PURS={new:'بانتظار اعتماد مدير المشتريات',pmok:'بانتظار الاعتماد النهائي للمدير العام',approved:'معتمد',purchased:'تم الشراء',received:'تم الاستلام',rejected:'مرفوض'};
+const MT_TYPES=['كهرباء','سباكة','تكييف وتبريد','ميكانيكا ومعدات','مبانٍ وصيانة عامة','أخرى'];
+const PRI={normal:'عادية',urgent:'عاجلة',critical:'طارئة'};
+const PRIC={normal:'new',urgent:'progress',critical:'rejected'};
+const ST={P:'P - حضور',A:'A - غياب',V:'V - إجازة'};
+const STL={P:'حضور (P)',A:'غياب (A)',V:'إجازة (V)'};
+const MONTHS=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const COMPANY='شركة الجزيرة الخضراء لتجارة المواشي والأغنام';
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function p2(n){return String(n).padStart(2,'0')}
+function today(){const d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function uiDialog(msg,withInput,val){
+  return new Promise(res=>{
+    const ov=document.createElement('div');ov.className='ovl';
+    ov.innerHTML=`<div class="dlg"><p>${esc(msg)}</p>${withInput?'<input type="text">':''}<div class="dbtn"><button class="btn" data-ok>موافق</button><button class="btn light" data-no>إلغاء</button></div></div>`;
+    document.body.appendChild(ov);
+    const inp=ov.querySelector('input'),ok=ov.querySelector('[data-ok]'),no=ov.querySelector('[data-no]');
+    if(inp){inp.value=val||'';inp.focus();inp.select()}else ok.focus();
+    const done=v=>{ov.remove();res(v)};
+    ok.onclick=()=>done(withInput?inp.value:true);
+    no.onclick=()=>done(withInput?null:false);
+    ov.addEventListener('keydown',e=>{if(e.key==='Enter')ok.click();if(e.key==='Escape')no.click()});
+  });
+}
+const uiConfirm=m=>uiDialog(m,false),uiPrompt=(m,v)=>uiDialog(m,true,v);
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',2600)}
+
+/* ===== التخزين المحلي ===== */
+function load(){
+  try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.users)return d}catch(e){}
+  return {users:[
+    {id:uid(),name:'مشرف الموقع',no:'700',role:'700',sig:''},
+    {id:uid(),name:'مشرف المنطقة',no:'600',role:'600',sig:''},
+    {id:uid(),name:'مدير المتابعة',no:'500',role:'500',sig:''}],
+    sites:[],reports:{},ui:{}};
+}
+let DB=load();DB.ui=DB.ui||{};
+function ensureAdmin(){
+  DB.mainSites=DB.mainSites||[];
+  DB.items=DB.items||[];DB.moves=DB.moves||[];DB.matReqs=DB.matReqs||[];DB.maintReqs=DB.maintReqs||[];DB.purReqs=DB.purReqs||[];DB.seq=DB.seq||{};
+  if(!DB.users.some(u=>u.role==='admin')){
+    let no='100';while(DB.users.some(u=>u.no===no))no+='0';
+    DB.users.unshift({id:uid(),name:'مدير النظام',no,role:'admin',sig:''});
+  }
+}
+function seedUsers(){
+  DB.expenses=DB.expenses||[];DB.payrolls=DB.payrolls||[];
+  if(DB.seededV2)return;
+  [['المدير العام','80','gm'],['مدير المخزن','60','store'],['مدير المشتريات','70','purch'],['مدير الحسابات','20','acc']].forEach(([name,no,role])=>{
+    if(!DB.users.some(u=>u.role===role)&&!DB.users.some(u=>u.no===no))DB.users.push({id:uid(),name,no,role,sig:''});
+  });
+  DB.seededV2=true;
+}
+ensureAdmin();seedUsers();save();
+function isAdmin(){const u=me();return !!u&&u.role==='admin'}
+function isGlobal(u){return !!u&&['admin','500','gm','acc','store','purch','maint'].includes(u.role)}
+function visSites(){const u=me();return isGlobal(u)?DB.sites:DB.sites.filter(s=>u&&u.mainId&&s.mainId===u.mainId)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){toast('تعذر الحفظ: مساحة التخزين ممتلئة')}}
+function me(){return DB.users.find(u=>u.id===DB.ui.userId)||null}
+
+/* ===== لوحة التوقيع ===== */
+function createPad(el){
+  el.innerHTML='<canvas width="400" height="130"></canvas><div class="pb"><button type="button" class="btn sm light" data-c>مسح</button><label class="btn sm light" style="margin:0">رفع صورة<input type="file" accept="image/*" hidden></label></div>';
+  const cv=el.querySelector('canvas'),cx=cv.getContext('2d');let dirty=false,drawing=false;
+  cx.lineWidth=2.5;cx.lineCap='round';cx.lineJoin='round';cx.strokeStyle='#111';
+  const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
+  cv.addEventListener('pointerdown',e=>{drawing=true;cv.setPointerCapture(e.pointerId);const[x,y]=pos(e);cx.beginPath();cx.moveTo(x,y);cx.lineTo(x+.1,y);cx.stroke();dirty=true});
+  cv.addEventListener('pointermove',e=>{if(!drawing)return;const[x,y]=pos(e);cx.lineTo(x,y);cx.stroke()});
+  ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,()=>drawing=false));
+  el.querySelector('[data-c]').onclick=()=>{cx.clearRect(0,0,cv.width,cv.height);dirty=false};
+  el.querySelector('input').onchange=function(){
+    const f=this.files[0];if(!f)return;const img=new Image();
+    img.onload=()=>{cx.clearRect(0,0,cv.width,cv.height);const s=Math.min(cv.width/img.width,cv.height/img.height);const w=img.width*s,h=img.height*s;cx.drawImage(img,(cv.width-w)/2,(cv.height-h)/2,w,h);dirty=true};
+    img.src=URL.createObjectURL(f);this.value='';
+  };
+  return{get:()=>dirty?cv.toDataURL('image/png'):'',clear:()=>el.querySelector('[data-c]').click()};
+}
+const uPad=createPad($('#uPad')),ePad=createPad($('#ePad'));
+
+/* ===== التنقل ===== */
+const SCREENS=['dash','daily','log','sum','mat','maint','store','pur','fin','pay','users','sites','backup'];
+function show(name){
+  if(!me()){name='login'}
+  else if(!SCREENS.includes(name)||!canSee(name)){name=me()&&me().role==='maint'?'maint':'dash'}
+  $$('#side a[data-go]').forEach(a=>a.style.display=canSee(a.dataset.go)?'':'none');
+  DB.ui.screen=name;save();
+  document.body.classList.toggle('nologin',!me());
+  document.body.classList.remove('open');
+  $$('.screen').forEach(s=>s.classList.toggle('on',s.id==='s-'+name));
+  $$('#side a[data-go]').forEach(a=>a.classList.toggle('active',a.dataset.go===name));
+  const u=me(),um=u&&DB.mainSites.find(m=>m.id===u.mainId);
+  $('#userChip').textContent=u?u.name+' • '+ROLES[u.role]+(um&&!isGlobal(u)?' • '+um.name:''):'';
+  if(name==='login')fillLogin();
+  if(name==='fin')renderFin();
+  if(name==='pay')renderPay();
+  if(name==='dash')renderDash();
+  if(name==='sum')renderSum();
+  if(name==='mat')renderMat(true);
+  if(name==='maint')renderMaint();
+  if(name==='store')renderStore();
+  if(name==='pur')renderPur();
+  if(name==='daily')renderDaily();
+  if(name==='log')renderLog();
+  if(name==='users')renderUsers();
+  if(name==='sites')renderSites();
+  if(name==='mat')markSeen(DB.matReqs);
+  if(name==='maint')markSeen(DB.maintReqs);
+  updateBadges();
+  window.scrollTo(0,0);
+}
+$$('#side a[data-go]').forEach(a=>a.onclick=()=>show(a.dataset.go));
+$('#burger').onclick=()=>document.body.classList.toggle('open');
+$('#main').addEventListener('click',()=>document.body.classList.remove('open'));
+$('#logout').onclick=()=>{DB.ui.userId=null;save();show('login')};
+
+/* ===== تسجيل الدخول ===== */
+function fillLogin(){
+  const sel=$('#lgSite');
+  sel.innerHTML='<option value="">— الإدارة العامة —</option>'+DB.mainSites.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+  if(DB.ui.lgSite&&DB.mainSites.some(m=>m.id===DB.ui.lgSite))sel.value=DB.ui.lgSite;
+}
+function doLogin(){
+  const no=$('#lgNo').value.trim(),site=$('#lgSite').value;
+  const u=DB.users.find(x=>x.no===no);
+  if(!u){toast('الرقم الوظيفي غير صحيح');return}
+  if(isGlobal(u)){
+    if(site){toast('هذا الرقم تابع للإدارة العامة، اختر «الإدارة العامة»');return}
+  }else{
+    if(!u.mainId){toast('هذا المستخدم غير مرتبط بموقع رئيسي، راجع مدير النظام');return}
+    if(u.mainId!==site){toast('الرقم الوظيفي غير تابع لهذا الموقع');return}
+  }
+  DB.ui.userId=u.id;DB.ui.lgSite=site;$('#lgNo').value='';save();show('dash');
+}
+$('#lgBtn').onclick=doLogin;
+$('#lgNo').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+/* ===== مساعدات ===== */
+function siteLabel(s){const m=DB.mainSites.find(x=>x.id===s.mainId);return m?m.name+' - '+s.name:s.name}
+function fillSites(sel,val){
+  const vs=visSites();
+  if(!vs.length){sel.innerHTML='<option value="">— لا توجد مواقع متاحة لك —</option>';return ''}
+  const opt=s=>`<option value="${s.id}">${esc(s.name)}</option>`;
+  let h='';
+  DB.mainSites.forEach(m=>{const ch=vs.filter(s=>s.mainId===m.id);if(ch.length)h+=`<optgroup label="${esc(m.name)}">${ch.map(opt).join('')}</optgroup>`});
+  const orph=vs.filter(s=>!DB.mainSites.some(m=>m.id===s.mainId));
+  if(orph.length)h+=`<optgroup label="بدون موقع رئيسي">${orph.map(opt).join('')}</optgroup>`;
+  sel.innerHTML=h;
+  if(vs.some(s=>s.id===val))sel.value=val;
+  return sel.value;
+}
+function approver(role,site){
+  const c=me(),mid=site&&site.mainId;
+  const ok=u=>u.role===role&&(role==='500'||(!!mid&&u.mainId===mid));
+  if(c&&ok(c))return c;
+  return DB.users.find(ok)||null;
+}
+function apprBoxes(appr){
+  return ['700','600','500'].map(r=>{const a=appr[r];
+    return `<div class="b"><div class="r">توقيع ${ROLES[r]}</div><div>${a?esc(a.name):'<span class="muted">— غير محدد —</span>'}</div>${a&&a.sig?`<img src="${a.sig}" alt="">`:''}</div>`}).join('');
+}
+function sigCell(status,sig){return sig?`<img class="sig" src="${sig}" alt="">`:'<span class="muted">—</span>'}
+
+/* ===== 2: الحضور اليومي ===== */
+function dailyState(){
+  const site=DB.sites.find(s=>s.id===DB.ui.dSite),date=DB.ui.dDate;
+  const rep=site&&DB.reports[site.id+'|'+date];
+  return{site,date,rep,sub:!!(rep&&rep.submitted)};
+}
+function renderDaily(){
+  DB.ui.dDate=$('#dDate').value||DB.ui.dDate||today();$('#dDate').value=DB.ui.dDate;
+  DB.ui.dSite=fillSites($('#dSite'),DB.ui.dSite);
+  const{site,date,rep,sub}=dailyState();
+  let rows=[];
+  if(sub)rows=rep.rows;
+  else if(site)rows=site.employees.map(e=>({id:e.id,name:e.name,job:e.job,sig:e.sig,status:(rep&&rep.status||{})[e.id]||''}));
+  $('#dBody').innerHTML=rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.job)}</td>
+    <td><select data-emp="${r.id||''}" data-i="${i}" class="s${r.status}" ${sub?'disabled':''}>
+    <option value="">— اختر —</option>${Object.keys(ST).map(k=>`<option value="${k}" ${r.status===k?'selected':''}>${ST[k]}</option>`).join('')}</select></td>
+    <td>${sigCell(r.status,r.sig)}</td></tr>`).join('')
+    :`<tr><td colspan="5" class="muted">${site?'لا يوجد موظفون في هذا الموقع. أضفهم من شاشة المواقع والموظفين.':'لا توجد مواقع.'}</td></tr>`;
+  $('#dAppr').innerHTML=apprBoxes(sub?rep.appr:{700:approver('700',site),600:approver('600',site),500:approver('500',site)});
+  $('#dBanner').innerHTML=sub?`<div class="banner ok">✔ تم تقديم التقرير بتاريخ ${new Date(rep.at).toLocaleString('en-GB')} بواسطة ${esc(rep.by)} — الحقول مغلقة ولا يمكن التعديل.</div>`:'';
+  $('#dSubmit').disabled=sub||!rows.length;
+  $('#dSubmit').textContent=sub?'تم تقديم التقرير':'تقديم التقرير اليومي';
+  save();
+}
+$('#dSite').onchange=()=>{DB.ui.dSite=$('#dSite').value;renderDaily()};
+$('#dDate').onchange=()=>{DB.ui.dDate=$('#dDate').value;renderDaily()};
+$('#dBody').addEventListener('change',e=>{
+  const sel=e.target.closest('select[data-emp]');if(!sel)return;
+  const{site,date,rep,sub}=dailyState();if(!site||sub)return;
+  const r=DB.reports[site.id+'|'+date]=rep||{submitted:false,status:{}};
+  r.status=r.status||{};r.status[sel.dataset.emp]=sel.value;
+  renderDaily();
+});
+$('#dSubmit').onclick=async()=>{
+  const{site,date,rep,sub}=dailyState();if(!site||sub)return;
+  const st=(rep&&rep.status)||{};
+  const miss=site.employees.filter(e=>!st[e.id]);
+  if(miss.length){toast('اختر حالة الحضور لجميع الموظفين ('+miss.length+' متبقٍ)');return}
+  if(!await uiConfirm('سيتم تقديم التقرير ولن يمكن تعديله بعد ذلك. هل تريد المتابعة؟'))return;
+  const ap=r=>{const a=approver(r,site);return a?{name:a.name,sig:a.sig||''}:null};
+  DB.reports[site.id+'|'+date]={submitted:true,at:Date.now(),by:me().name,
+    rows:site.employees.map(e=>({id:e.id,name:e.name,job:e.job,sig:e.sig,status:st[e.id]})),
+    appr:{700:ap('700'),600:ap('600'),500:ap('500')}};
+  renderDaily();toast('تم تقديم التقرير');
+};
+
+/* ===== 3: سجل الحضور ===== */
+function logData(siteId,month){
+  const[y,m]=month.split('-').map(Number),n=new Date(y,m,0).getDate(),out=[];
+  for(let d=1;d<=n;d++){
+    const date=`${y}-${p2(m)}-${p2(d)}`,rep=DB.reports[siteId+'|'+date];
+    out.push({d,dn:DAYS[new Date(y,m-1,d).getDay()],rows:rep&&rep.submitted?rep.rows:null});
+  }
+  return out;
+}
+function renderLog(){
+  DB.ui.lSite=fillSites($('#lSite'),DB.ui.lSite);
+  DB.ui.lMonth=$('#lMonth').value||DB.ui.lMonth||today().slice(0,7);$('#lMonth').value=DB.ui.lMonth;
+  const data=DB.ui.lSite?logData(DB.ui.lSite,DB.ui.lMonth):[];
+  const cnt={P:0,A:0,V:0};let h='';
+  data.forEach(x=>{
+    if(!x.rows||!x.rows.length){h+=`<tr><td class="daycell">${x.d}<small>${x.dn}</small></td><td colspan="4" class="muted">لم يُقدَّم تقرير</td></tr>`;return}
+    x.rows.forEach((r,i)=>{cnt[r.status]++;
+      h+=`<tr>${i===0?`<td class="daycell" rowspan="${x.rows.length}">${x.d}<small>${x.dn}</small></td>`:''}<td>${esc(r.name)}</td><td>${esc(r.job)}</td><td>${STL[r.status]||''}</td><td>${sigCell(r.status,r.sig)}</td></tr>`});
+  });
+  $('#lBody').innerHTML=h||'<tr><td colspan="5" class="muted">لا توجد بيانات.</td></tr>';
+  $('#lChips').innerHTML=`<span class="chip" style="background:#e3f6e4">حضور: ${cnt.P}</span><span class="chip" style="background:#fde7e6">غياب: ${cnt.A}</span><span class="chip" style="background:#fff3dc">إجازة: ${cnt.V}</span>`;
+  save();
+}
+$('#lSite').onchange=()=>{DB.ui.lSite=$('#lSite').value;renderLog()};
+$('#lMonth').onchange=()=>{DB.ui.lMonth=$('#lMonth').value;renderLog()};
+$('#lPdf').onclick=()=>{
+  const site=DB.sites.find(s=>s.id===DB.ui.lSite);
+  if(!site){toast('اختر موقعاً أولاً');return}
+  const month=DB.ui.lMonth,[y,m]=month.split('-').map(Number);
+  let h='';
+  logData(site.id,month).forEach(x=>{
+    if(!x.rows||!x.rows.length){h+=`<tr><td class="daycell">${x.d} - ${x.dn}</td><td colspan="3">لم يُقدَّم تقرير</td></tr>`;return}
+    x.rows.forEach((r,i)=>{h+=`<tr>${i===0?`<td class="daycell" rowspan="${x.rows.length}">${x.d} - ${x.dn}</td>`:''}<td>${esc(r.name)}</td><td>${STL[r.status]||''}</td><td>${r.sig?`<img class="sig" src="${r.sig}" alt="">`:'—'}</td></tr>`});
+  });
+  $('#printArea').innerHTML=`<h1>${COMPANY}</h1>
+   <div class="pl"><span>تقرير الحضور والانصراف — الموقع: ${esc(siteLabel(site))}</span><span>شهر التقرير: ${MONTHS[m-1]} ${y}</span></div>
+   <table><thead><tr><th>اليوم</th><th>اسم الموظف</th><th>حالة الحضور</th><th>التوقيع</th></tr></thead><tbody>${h}</tbody></table>`;
+  const old=document.title;document.title=`تقرير الحضور - ${site.name} - ${month}`;
+  setTimeout(()=>{window.print();document.title=old},100);
+};
+
+/* ===== 4: المستخدمون ===== */
+function mainCell(u){
+  if(isGlobal(u))return '<span class="muted">كل المواقع</span>';
+  return `<select data-umain="${u.id}"><option value="">— غير محدد —</option>${DB.mainSites.map(m=>`<option value="${m.id}" ${u.mainId===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select>`;
+}
+function renderUsers(){
+  $('#uMain').innerHTML=DB.mainSites.length?DB.mainSites.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join(''):'<option value="">— أضف موقعاً رئيسياً من شاشة المواقع —</option>';
+  $('#uMainWrap').style.display=isGlobal({role:$('#uRole').value})?'none':'';
+  $('#uBody').innerHTML=DB.users.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.no)}</td><td><select data-role="${u.id}">${Object.keys(ROLES).map(k=>`<option value="${k}" ${u.role===k?'selected':''}>${ROLES[k]}</option>`).join('')}</select></td><td>${mainCell(u)}</td><td>${u.sig?`<img class="sig" src="${u.sig}" alt="">`:'—'}</td><td><button class="btn light sm" data-ed="${u.id}">تعديل</button> <button class="btn red sm" data-del="${u.id}">حذف</button></td></tr>`).join('');
+}
+$('#uAdd').onclick=()=>{
+  const name=$('#uName').value.trim(),no=$('#uNo').value.trim(),role=$('#uRole').value,mainId=isGlobal({role})?'':$('#uMain').value;
+  if(!name||!no){toast('أدخل الاسم والرقم الوظيفي');return}
+  if(!isGlobal({role})&&!mainId){toast('اختر الموقع الرئيسي لهذا المستخدم');return}
+  if(DB.users.some(u=>u.no===no)){toast('الرقم الوظيفي مستخدم من قبل');return}
+  DB.users.push({id:uid(),name,no,role,mainId,sig:uPad.get()});save();
+  $('#uName').value='';$('#uNo').value='';uPad.clear();renderUsers();toast('تمت إضافة المستخدم');
+};
+$('#uBody').addEventListener('click',async e=>{
+  const id=e.target.dataset.del;if(!id)return;
+  if(id===DB.ui.userId){toast('لا يمكن حذف المستخدم الحالي');return}
+  if(DB.users.length<=1)return;
+  const du=DB.users.find(x=>x.id===id);
+  if(du&&du.role==='admin'&&DB.users.filter(x=>x.role==='admin').length<=1){toast('لا يمكن حذف الأدمن الوحيد');return}
+  if(!await uiConfirm('حذف هذا المستخدم؟'))return;
+  DB.users=DB.users.filter(u=>u.id!==id);save();renderUsers();
+});
+
+/* ===== 5: المواقع والموظفون ===== */
+function renderSites(){
+  const mm=$('#sMain');
+  mm.innerHTML=DB.mainSites.length?DB.mainSites.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join(''):'<option value="">— أضف موقعاً رئيسياً أولاً —</option>';
+  if(DB.mainSites.some(m=>m.id===DB.ui.sMain))mm.value=DB.ui.sMain;
+  $('#mnBody').innerHTML=DB.mainSites.length?DB.mainSites.map(m=>`<tr><td>${esc(m.name)}</td><td>${DB.sites.filter(s=>s.mainId===m.id).length}</td><td><button class="btn light sm" data-mren="${m.id}">تعديل الاسم</button> <button class="btn red sm" data-mdel="${m.id}">حذف</button></td></tr>`).join(''):'<tr><td colspan="3" class="muted">لا توجد مواقع رئيسية بعد.</td></tr>';
+  DB.ui.eSite=fillSites($('#eSite'),DB.ui.eSite);
+  const site=DB.sites.find(s=>s.id===DB.ui.eSite);
+  $('#empCard').style.display=site?'block':'none';
+  $('#eJob').innerHTML=JOBS.map(j=>`<option>${j}</option>`).join('');
+  $('#eBody').innerHTML=site&&site.employees.length?site.employees.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.name)}</td><td><select data-job="${e.id}">${JOBS.map(j=>`<option ${j===e.job?'selected':''}>${j}</option>`).join('')}</select></td><td>${e.sig?`<img class="sig" src="${e.sig}" alt="">`:'—'}</td><td><button class="btn light sm" data-ed="${e.id}">تعديل الاسم</button> <button class="btn red sm" data-del="${e.id}">حذف</button></td></tr>`).join(''):'<tr><td colspan="5" class="muted">لا يوجد موظفون بعد.</td></tr>';
+}
+$('#mnAdd').onclick=()=>{
+  const name=$('#mnName').value.trim();if(!name){toast('أدخل اسم الموقع الرئيسي');return}
+  if(DB.mainSites.some(m=>m.name===name)){toast('الموقع الرئيسي موجود من قبل');return}
+  const m={id:uid(),name};DB.mainSites.push(m);DB.ui.sMain=m.id;save();
+  $('#mnName').value='';renderSites();toast('تمت إضافة الموقع الرئيسي، أضف مواقعه الفرعية الآن');
+};
+$('#mnBody').addEventListener('click',async e=>{
+  const d=e.target.dataset.mdel,r=e.target.dataset.mren;
+  if(d){
+    if(DB.sites.some(s=>s.mainId===d)){toast('احذف المواقع الفرعية التابعة له أولاً');return}
+    if(DB.users.some(u=>u.mainId===d)){toast('يوجد مستخدمون مرتبطون بهذا الموقع، غيّر موقعهم أولاً');return}
+    if(!await uiConfirm('حذف الموقع الرئيسي؟'))return;
+    DB.mainSites=DB.mainSites.filter(m=>m.id!==d);save();renderSites();
+  }
+  if(r){const m=DB.mainSites.find(x=>x.id===r),n=await uiPrompt('اسم الموقع الرئيسي:',m.name);if(n&&n.trim()){m.name=n.trim();save();renderSites()}}
+});
+$('#sMain').onchange=()=>{DB.ui.sMain=$('#sMain').value;save()};
+$('#sAdd').onclick=()=>{
+  const name=$('#sName').value.trim(),mainId=$('#sMain').value;
+  if(!mainId){toast('أضف موقعاً رئيسياً أولاً');return}
+  if(!name){toast('أدخل اسم الموقع الفرعي');return}
+  if(DB.sites.some(s=>s.mainId===mainId&&s.name===name)){toast('الموقع الفرعي موجود من قبل');return}
+  const s={id:uid(),name,mainId,employees:[]};DB.sites.push(s);DB.ui.eSite=s.id;save();
+  $('#sName').value='';renderSites();toast('تمت إضافة الموقع الفرعي، أضف موظفيه الآن');
+  $('#empCard').scrollIntoView({behavior:'smooth'});
+};
+$('#eSite').onchange=()=>{DB.ui.eSite=$('#eSite').value;renderSites()};
+$('#eAdd').onclick=()=>{
+  const site=DB.sites.find(s=>s.id===DB.ui.eSite),name=$('#eName').value.trim();
+  if(!site||!name){toast('أدخل اسم الموظف');return}
+  site.employees.push({id:uid(),name,job:$('#eJob').value,sig:ePad.get()});save();
+  $('#eName').value='';ePad.clear();renderSites();toast('تمت إضافة الموظف');
+};
+$('#eBody').addEventListener('click',async e=>{
+  const id=e.target.dataset.del,site=DB.sites.find(s=>s.id===DB.ui.eSite);if(!id||!site)return;
+  if(!await uiConfirm('حذف الموظف؟ (التقارير المقدمة سابقاً تبقى كما هي)'))return;
+  site.employees=site.employees.filter(x=>x.id!==id);save();renderSites();
+});
+$('#sDel').onclick=async()=>{
+  const site=DB.sites.find(s=>s.id===DB.ui.eSite);if(!site)return;
+  if(!await uiConfirm('حذف الموقع "'+site.name+'" مع جميع موظفيه وسجلاته؟'))return;
+  Object.keys(DB.reports).forEach(k=>{if(k.startsWith(site.id+'|'))delete DB.reports[k]});
+  DB.sites=DB.sites.filter(s=>s.id!==site.id);DB.ui.eSite=DB.ui.dSite=DB.ui.lSite='';save();renderSites();
+};
+
+/* ===== تعديلات الأدمن ===== */
+$('#uBody').addEventListener('change',e=>{
+  const id=e.target.dataset.role;if(!id)return;
+  const u=DB.users.find(x=>x.id===id),v=e.target.value;
+  if(u.role==='admin'&&v!=='admin'&&DB.users.filter(x=>x.role==='admin').length<=1){toast('لا يمكن تغيير دور الأدمن الوحيد');renderUsers();return}
+  u.role=v;if(isGlobal(u))u.mainId='';save();show(DB.ui.screen);
+});
+$('#uBody').addEventListener('click',async e=>{
+  const id=e.target.dataset.ed;if(!id)return;
+  const u=DB.users.find(x=>x.id===id),n=await uiPrompt('اسم المستخدم:',u.name);
+  if(n===null)return;
+  const no=await uiPrompt('الرقم الوظيفي:',u.no);
+  if(no!==null&&no.trim()&&no.trim()!==u.no){
+    if(DB.users.some(x=>x.no===no.trim())){toast('الرقم الوظيفي مستخدم من قبل');return}
+    u.no=no.trim();
+  }
+  if(n.trim())u.name=n.trim();
+  save();show(DB.ui.screen);toast('تم الحفظ');
+});
+$('#eBody').addEventListener('click',async e=>{
+  const id=e.target.dataset.ed,site=DB.sites.find(s=>s.id===DB.ui.eSite);if(!id||!site)return;
+  const emp=site.employees.find(x=>x.id===id),n=await uiPrompt('اسم الموظف:',emp.name);
+  if(n&&n.trim()){emp.name=n.trim();save();renderSites()}
+});
+$('#eBody').addEventListener('change',e=>{
+  const id=e.target.dataset.job,site=DB.sites.find(s=>s.id===DB.ui.eSite);if(!id||!site)return;
+  const emp=site.employees.find(x=>x.id===id);emp.job=e.target.value;save();toast('تم تعديل الوظيفة');
+});
+$('#sRen').onclick=async()=>{
+  const s=DB.sites.find(x=>x.id===DB.ui.eSite);if(!s)return;
+  const n=await uiPrompt('اسم الموقع الفرعي:',s.name);
+  if(n&&n.trim()){s.name=n.trim();save();renderSites()}
+};
+
+$('#uRole').onchange=()=>{$('#uMainWrap').style.display=isGlobal({role:$('#uRole').value})?'none':''};
+$('#uBody').addEventListener('change',e=>{
+  const id=e.target.dataset.umain;if(!id)return;
+  const u=DB.users.find(x=>x.id===id);u.mainId=e.target.value;save();toast('تم ربط المستخدم بالموقع');
+});
+
+/* ===== لوحة التحكم ===== */
+function renderDash(){
+  dashModules();
+  const t=today(),[y,m,d]=t.split('-').map(Number);
+  $('#hDate').textContent='اليوم: '+DAYS[new Date(y,m-1,d).getDay()]+' '+d+' '+MONTHS[m-1]+' '+y;
+  let emp=0,subm=0,tot={P:0,A:0,V:0},rows='';
+  visSites().forEach(s=>{
+    emp+=s.employees.length;
+    const rep=DB.reports[s.id+'|'+t],sub=!!(rep&&rep.submitted),c={P:0,A:0,V:0};
+    if(sub){subm++;rep.rows.forEach(r=>{c[r.status]++;tot[r.status]++})}
+    rows+=`<tr><td>${esc(siteLabel(s))}</td><td>${s.employees.length}</td><td>${sub?'<b style="color:var(--gd)">✔ مقدَّم</b>':'<b style="color:var(--red)">لم يُقدَّم</b>'}</td><td>${c.P}</td><td>${c.A}</td><td>${c.V}</td><td><button class="btn sm light" data-open="${s.id}">${sub?'عرض':'فتح'}</button></td></tr>`;
+  });
+  $('#hStats').innerHTML=[['المواقع',visSites().length],['الموظفون',emp],['تقارير اليوم',subm+' / '+visSites().length],['حضور اليوم',tot.P],['غياب اليوم',tot.A],['إجازة اليوم',tot.V]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+  $('#hBody').innerHTML=rows||'<tr><td colspan="7" class="muted">لا توجد مواقع. أضف موقعاً من شاشة المواقع والموظفين.</td></tr>';
+}
+$('#hBody').addEventListener('click',async e=>{
+  const id=e.target.dataset.open;if(!id)return;
+  DB.ui.dSite=id;DB.ui.dDate=today();$('#dDate').value=today();show('daily');
+});
+
+/* ===== ملخص الموظفين الشهري ===== */
+function sumData(siteId,month){
+  const map={},order=[],site=DB.sites.find(s=>s.id===siteId);
+  if(site)site.employees.forEach(e=>{map[e.id]={name:e.name,job:e.job,P:0,A:0,V:0};order.push(e.id)});
+  let days=0;
+  logData(siteId,month).forEach(x=>{
+    if(!x.rows)return;days++;
+    x.rows.forEach(r=>{const k=r.id||r.name;if(!map[k]){map[k]={name:r.name,job:r.job,P:0,A:0,V:0};order.push(k)}map[k][r.status]++});
+  });
+  return{list:order.map(k=>map[k]),days};
+}
+const pct=r=>{const t=r.P+r.A+r.V;return t?Math.round(r.P/t*100)+'%':'—'};
+function renderSum(){
+  DB.ui.mSite=fillSites($('#mSite'),DB.ui.mSite);
+  DB.ui.mMonth=$('#mMonth').value||DB.ui.mMonth||today().slice(0,7);$('#mMonth').value=DB.ui.mMonth;
+  const d=DB.ui.mSite?sumData(DB.ui.mSite,DB.ui.mMonth):{list:[],days:0};
+  $('#mBody').innerHTML=d.list.length?d.list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.job)}</td><td>${r.P}</td><td>${r.A}</td><td>${r.V}</td><td><b>${pct(r)}</b></td></tr>`).join(''):'<tr><td colspan="7" class="muted">لا توجد بيانات.</td></tr>';
+  $('#mChips').innerHTML=`<span class="chip">عدد الأيام المقدَّم عنها تقارير: ${d.days}</span>`;
+  save();
+}
+$('#mSite').onchange=()=>{DB.ui.mSite=$('#mSite').value;renderSum()};
+$('#mMonth').onchange=()=>{DB.ui.mMonth=$('#mMonth').value;renderSum()};
+$('#mPdf').onclick=()=>{
+  const site=DB.sites.find(s=>s.id===DB.ui.mSite);
+  if(!site){toast('اختر موقعاً أولاً');return}
+  const[y,m]=DB.ui.mMonth.split('-').map(Number),d=sumData(site.id,DB.ui.mMonth);
+  $('#printArea').innerHTML=`<h1>${COMPANY}</h1>
+   <div class="pl"><span>ملخص حضور الموظفين — الموقع: ${esc(siteLabel(site))}</span><span>شهر التقرير: ${MONTHS[m-1]} ${y}</span></div>
+   <table><thead><tr><th>م</th><th>اسم الموظف</th><th>الوظيفة</th><th>حضور</th><th>غياب</th><th>إجازة</th><th>نسبة الحضور</th></tr></thead><tbody>${d.list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.job)}</td><td>${r.P}</td><td>${r.A}</td><td>${r.V}</td><td>${pct(r)}</td></tr>`).join('')}</tbody></table>`;
+  const old=document.title;document.title=`ملخص الحضور - ${site.name} - ${DB.ui.mMonth}`;
+  setTimeout(()=>{window.print();document.title=old},100);
+};
+
+/* ===== النسخ الاحتياطي ===== */
+$('#bkExport').onclick=()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(DB)],{type:'application/json'}));
+  a.download='نسخة-احتياطية-'+today()+'.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('تم تنزيل النسخة الاحتياطية');
+};
+$('#bkImport').onchange=function(){
+  const f=this.files[0];this.value='';if(!f)return;
+  const fr=new FileReader();
+  fr.onload=async()=>{
+    try{
+      const o=JSON.parse(fr.result);
+      if(!o||!Array.isArray(o.users)||!Array.isArray(o.sites)||typeof o.reports!=='object')throw 0;
+      if(!await uiConfirm('سيتم استبدال جميع البيانات الحالية بمحتوى النسخة. هل تريد المتابعة؟'))return;
+      const ui=DB.ui;DB=o;DB.ui=ui;ensureAdmin();save();show('dash');toast('تمت استعادة البيانات');
+    }catch(e){toast('ملف النسخة الاحتياطية غير صالح')}
+  };
+  fr.readAsText(f);
+};
+
+
+/* ===== أدوات الطلبات ===== */
+const bd=(map,k)=>`<span class="bd ${k}">${map[k]}</span>`;
+const fmtD=t=>{const d=new Date(t);return d.toLocaleDateString('en-GB')+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})};
+function nextNo(k,pre){DB.seq=DB.seq||{};DB.seq[k]=(DB.seq[k]||0)+1;return pre+'-'+String(DB.seq[k]).padStart(4,'0')}
+function visReqs(l){const u=me();return isGlobal(u)?l:l.filter(r=>u&&u.mainId&&r.mainId===u.mainId)}
+function siteName(id){const s=DB.sites.find(x=>x.id===id);return s?siteLabel(s):'—'}
+function addMove(it,type,qty,ref){DB.moves.unshift({id:uid(),at:Date.now(),itemId:it.id,name:it.name,type,qty,ref:ref||'',by:me().name})}
+function addPur(it,qty,src,est){DB.purReqs.unshift({id:uid(),no:nextNo('pur','PR'),at:Date.now(),by:me().name,itemId:it.id,name:it.name,unit:it.unit,qty,est:est||0,src:src||'',status:'new'})}
+function numOf(v){const n=Math.floor(Number(String(v).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c))));return isFinite(n)?n:NaN}
+
+/* ===== طلبات المواد ===== */
+function itemOpts(){return DB.items.map(i=>`<option value="${i.id}">${esc(i.name)} (متوفر: ${i.qty} ${esc(i.unit)})</option>`).join('')}
+function addMrRow(){
+  const d=document.createElement('div');d.className='row irow';d.style.marginBottom='8px';
+  d.innerHTML=`<div><select class="mi">${itemOpts()}</select></div><div style="flex:0 0 110px;min-width:90px"><input type="number" min="1" value="1" class="mq"></div><div style="flex:0 0 auto;min-width:0"><button type="button" class="btn red sm" data-rm>✕</button></div>`;
+  $('#mrItems').appendChild(d);
+}
+function hasShort(r){return r.items.some(it=>{const st=DB.items.find(x=>x.id===it.itemId);return st&&(it.qty-(it.issued||0))>st.qty})}
+function renderMat(reset){
+  $('#mrNew').style.display=has('700','600')?'':'none';
+  DB.ui.mrSite=fillSites($('#mrSite'),DB.ui.mrSite);
+  const ok=DB.items.length>0;
+  $('#mrEmpty').style.display=ok?'none':'';
+  $('#mrAddRow').style.display=$('#mrSend').style.display=ok?'':'none';
+  if(reset||!ok)$('#mrItems').innerHTML='';
+  if(ok&&!$('#mrItems').children.length)addMrRow();
+  const f=$('#mrFilter').value,list=visReqs(DB.matReqs).filter(r=>!f||r.status===f);
+  $('#mrBody').innerHTML=list.length?list.map(r=>{
+    let act='';
+    if(has('store','gm')){
+      if(r.status==='new'||r.status==='partial')act+=`<button class="btn sm" data-iss="${r.id}">${r.status==='new'?'اعتماد وصرف':'إكمال الصرف'}</button> `;
+      if(r.status==='new')act+=`<button class="btn red sm" data-rej="${r.id}">رفض</button> `;
+    }
+    if(has('store','purch')&&(r.status==='new'||r.status==='partial')&&hasShort(r)&&!r.boughtAt)act+=`<button class="btn light sm" data-buy="${r.id}">طلب شراء للنقص</button>`;
+    if(r.boughtAt)act+='<span class="muted">تم طلب الشراء</span>';
+    return `<tr><td>${r.no}</td><td>${fmtD(r.at)}</td><td>${esc(siteName(r.siteId))}<br><small class="muted">${esc(r.by)}</small></td>
+      <td class="r">${r.items.map(it=>`${esc(it.name)}: ${it.qty} ${esc(it.unit)}${it.issued?` <span class="muted">(صُرف ${it.issued})</span>`:''}`).join('<br>')}${r.note?`<br><small class="muted">ملاحظة: ${esc(r.note)}</small>`:''}</td>
+      <td>${bd(MATS,r.status)}${r.reason?`<br><small class="muted">${esc(r.reason)}</small>`:''}</td><td>${act||'—'}</td></tr>`}).join('')
+    :'<tr><td colspan="6" class="muted">لا توجد طلبات.</td></tr>';
+}
+$('#mrFilter').onchange=()=>renderMat();
+$('#mrSite').onchange=()=>{DB.ui.mrSite=$('#mrSite').value;save()};
+$('#mrAddRow').onclick=addMrRow;
+$('#mrItems').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;if($('#mrItems').children.length>1)b.closest('.irow').remove();else toast('الطلب يحتاج صنفاً واحداً على الأقل')});
+$('#mrSend').onclick=()=>{
+  if(!has('700','600'))return;
+  const siteId=$('#mrSite').value;if(!siteId){toast('اختر الموقع');return}
+  const items=[];
+  for(const row of $$('#mrItems .irow')){
+    const id=row.querySelector('.mi').value,q=numOf(row.querySelector('.mq').value),it=DB.items.find(x=>x.id===id);
+    if(!it||!(q>0)){toast('تحقق من الأصناف والكميات');return}
+    const ex=items.find(x=>x.itemId===id);
+    if(ex)ex.qty+=q;else items.push({itemId:id,name:it.name,unit:it.unit,qty:q,issued:0});
+  }
+  if(!items.length){toast('أضف صنفاً واحداً على الأقل');return}
+  const site=DB.sites.find(s=>s.id===siteId);
+  DB.matReqs.unshift({id:uid(),no:nextNo('mat','MR'),at:Date.now(),by:me().name,siteId,mainId:site.mainId||'',items,note:$('#mrNote').value.trim(),status:'new'});
+  save();$('#mrNote').value='';renderMat(true);toast('تم إرسال الطلب إلى المخزن');
+};
+function issueMat(r){
+  let any=false;
+  r.items.forEach(it=>{
+    const need=it.qty-(it.issued||0);if(need<=0)return;
+    const st=DB.items.find(x=>x.id===it.itemId);if(!st||st.qty<=0)return;
+    const q=Math.min(need,st.qty);st.qty-=q;it.issued=(it.issued||0)+q;any=true;addMove(st,'out',q,r.no);
+  });
+  if(!any){toast('لا يوجد رصيد كافٍ في المخزن لهذه الأصناف');return}
+  r.status=r.items.every(it=>(it.issued||0)>=it.qty)?'issued':'partial';
+  save();renderMat();toast(r.status==='issued'?'تم صرف الطلب كاملاً':'تم الصرف الجزئي حسب الرصيد المتاح');
+}
+$('#mrBody').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const r=DB.matReqs.find(x=>x.id===(b.dataset.iss||b.dataset.rej||b.dataset.buy));if(!r)return;
+  if(b.dataset.iss&&has('store','gm')){if(r.status==='new')r.approvedBy=me().name;issueMat(r)}
+  else if(b.dataset.rej&&has('store','gm')){
+    const why=await uiPrompt('سبب الرفض:','');if(why===null)return;
+    r.status='rejected';r.reason=why.trim();save();renderMat();
+  }else if(b.dataset.buy&&has('store','purch')){
+    let n=0;
+    r.items.forEach(it=>{const st=DB.items.find(x=>x.id===it.itemId);if(!st)return;const sh=(it.qty-(it.issued||0))-st.qty;if(sh>0){addPur(st,sh,'طلب مواد '+r.no);n++}});
+    if(!n){toast('لا يوجد نقص');return}
+    r.boughtAt=Date.now();save();renderMat();toast('تم إنشاء '+n+' طلب شراء');
+  }
+});
+
+/* ===== الصيانة ===== */
+function renderMaint(){
+  $('#mtNew').style.display=has('700','600')?'':'none';
+  $('#mpNew').style.display=has('maint')?'':'none';
+  $('#mpLink').innerHTML='<option value="">— بدون ربط —</option>'+DB.maintReqs.filter(r=>r.status!=='done'&&r.status!=='rejected').map(r=>`<option value="${r.id}">${r.no} - ${esc(r.desc).slice(0,40)}</option>`).join('');
+  DB.ui.mtSite=fillSites($('#mtSite'),DB.ui.mtSite);
+  if(!$('#mtType').options.length){
+    $('#mtType').innerHTML=MT_TYPES.map(t=>`<option>${t}</option>`).join('');
+    $('#mtPri').innerHTML=Object.keys(PRI).map(k=>`<option value="${k}">${PRI[k]}</option>`).join('');
+  }
+  const f=$('#mtFilter').value,list=visReqs(DB.maintReqs).filter(r=>!f||r.status===f);
+  $('#mtBody').innerHTML=list.length?list.map(r=>{
+    let act='';
+    if(has('gm')&&r.status==='new')act+=`<button class="btn sm" data-mok="${r.id}">اعتماد</button> <button class="btn red sm" data-rej="${r.id}">رفض</button>`;
+    if(has('maint')){
+      act+=`<button class="btn light sm" data-mproof="${r.id}">📎 إثبات</button> `;
+      act+=`<button class="btn light sm" data-reply="${r.id}">رد</button> `;
+      if(r.status==='approved')act+=`<button class="btn sm" data-go2="${r.id}">بدء التنفيذ</button>`;
+      if(r.status==='progress')act+=`<button class="btn sm" data-done="${r.id}">إنجاز</button>`;
+    }
+    return `<tr><td>${r.no}</td><td>${fmtD(r.at)}</td><td>${esc(siteName(r.siteId))}<br><small class="muted">${esc(r.by)}</small></td><td>${esc(r.type)}</td>
+      <td class="r">${esc(r.desc)}${r.files&&r.files.length?"<br>"+attLinks(r.files):""}${r.proof?"<br><small>إثبات الإنجاز: </small>"+attLinks(r.proof):""}${(r.replies||[]).map(x=>`<br><small class="muted">↩ ${esc(x.by)} (${fmtD(x.at)}): ${esc(x.text)}</small>`).join("")}</td><td><span class="bd ${PRIC[r.pri]}">${PRI[r.pri]}</span></td>
+      <td>${bd(MNTS,r.status)}${r.notes?`<br><small class="muted">${esc(r.notes)}</small>`:''}${r.cost?`<br><small class="muted">التكلفة: ${r.cost}</small>`:''}</td><td>${act||'—'}</td></tr>`}).join('')
+    :'<tr><td colspan="8" class="muted">لا توجد طلبات صيانة.</td></tr>';
+}
+$('#mtFilter').onchange=()=>renderMaint();
+$('#mtSite').onchange=()=>{DB.ui.mtSite=$('#mtSite').value;save()};
+$('#mtSend').onclick=async()=>{
+  if(!has('700','600'))return;
+  const siteId=$('#mtSite').value,desc=$('#mtDesc').value.trim();
+  if(!siteId){toast('اختر الموقع');return}
+  if(!desc){toast('اكتب وصف العطل أو المطلوب');return}
+  const site=DB.sites.find(s=>s.id===siteId);
+  const atts=await readAtts([...$('#mtFile').files]);
+  DB.maintReqs.unshift({id:uid(),no:nextNo('maint','MT'),at:Date.now(),by:me().name,siteId,mainId:site.mainId||'',type:$('#mtType').value,pri:$('#mtPri').value,desc,status:'new',files:atts});
+  save();$('#mtDesc').value='';$('#mtFile').value='';renderMaint();toast('تم إرسال طلب الصيانة');
+};
+$('#mtBody').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b||!has('maint','gm'))return;
+  const r=DB.maintReqs.find(x=>x.id===(b.dataset.mproof||b.dataset.reply||b.dataset.mok||b.dataset.go2||b.dataset.rej||b.dataset.done));if(!r)return;
+  if(b.dataset.mproof&&has('maint')){
+    const picked=await pickFiles();if(!picked.length)return;
+    r.proof=(r.proof||[]).concat(await readAtts(picked));save();renderMaint();toast('تم رفع الإثبات');return;
+  }
+  if(b.dataset.reply&&has('maint')){
+    const t=await uiPrompt('نص الرد:','');if(!t||!t.trim())return;
+    (r.replies=r.replies||[]).push({by:me().name,at:Date.now(),text:t.trim()});save();renderMaint();return;
+  }
+  if(b.dataset.mok&&has('gm')&&r.status==='new'){r.status='approved';r.approvedBy=me().name;save();renderMaint()}
+  else if(b.dataset.go2&&has('maint')){r.status='progress';r.by2=me().name;save();renderMaint()}
+  else if(b.dataset.rej&&has('gm','maint')){const why=await uiPrompt('سبب الرفض:','');if(why===null)return;r.status='rejected';r.notes=why.trim();save();renderMaint()}
+  else if(b.dataset.done&&has('maint')){
+    const n=await uiPrompt('ملاحظات الإنجاز (اختياري):','');if(n===null)return;
+    const c=await uiPrompt('تكلفة الصيانة (اختياري، رقم):','0');if(c===null)return;
+    r.status='done';r.notes=n.trim();r.cost=Math.max(0,Number(c)||0);r.doneAt=Date.now();save();renderMaint();
+  }
+});
+
+/* ===== المخزن ===== */
+const MVT={in:'وارد',out:'صادر',adj:'تسوية'};
+function renderStore(){
+  const ed=has('store');
+  $('#stNew').style.display=ed?'':'none';
+  $('#stBody').innerHTML=DB.items.length?DB.items.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td><b>${i.qty}</b></td><td>${i.min}</td>
+    <td>${i.qty<=i.min?'<span class="bd rejected">تحت الحد الأدنى</span>':'<span class="bd done">كافٍ</span>'}</td>
+    <td>${ed?`<button class="btn light sm" data-in="${i.id}">استلام</button> <button class="btn light sm" data-adj="${i.id}">تسوية</button> `:''}${has('store','purch','500')?`<button class="btn light sm" data-buy="${i.id}">طلب شراء</button> `:''}${ed?`<button class="btn red sm" data-del="${i.id}">حذف</button>`:''}</td></tr>`).join('')
+    :'<tr><td colspan="6" class="muted">لا توجد أصناف بعد.</td></tr>';
+  $('#mvBody').innerHTML=DB.moves.length?DB.moves.slice(0,60).map(m=>`<tr><td>${fmtD(m.at)}</td><td>${esc(m.name)}</td><td>${MVT[m.type]}</td><td dir="ltr">${m.type==='adj'&&m.qty>0?'+':''}${m.qty}</td><td>${esc(m.ref)}</td><td>${esc(m.by)}</td></tr>`).join(''):'<tr><td colspan="6" class="muted">لا توجد حركات.</td></tr>';
+}
+$('#stAdd').onclick=()=>{
+  if(!has('store'))return;
+  const name=$('#stName').value.trim(),unit=$('#stUnit').value.trim()||'قطعة',qty=Math.max(0,numOf($('#stQty').value)||0),min=Math.max(0,numOf($('#stMin').value)||0);
+  if(!name){toast('أدخل اسم الصنف');return}
+  if(DB.items.some(i=>i.name===name)){toast('الصنف موجود من قبل');return}
+  const it={id:uid(),name,unit,qty,min};DB.items.push(it);
+  if(qty>0)addMove(it,'in',qty,'رصيد افتتاحي');
+  save();$('#stName').value='';$('#stQty').value=0;$('#stMin').value=0;renderStore();toast('تمت إضافة الصنف');
+};
+$('#stBody').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const id=b.dataset.in||b.dataset.adj||b.dataset.buy||b.dataset.del,it=DB.items.find(x=>x.id===id);if(!it)return;
+  if(b.dataset.in&&has('store')){
+    const v=await uiPrompt('الكمية المستلمة من «'+it.name+'»:','');if(v===null)return;
+    const q=numOf(v);if(!(q>0)){toast('كمية غير صحيحة');return}
+    it.qty+=q;addMove(it,'in',q,'استلام يدوي');save();renderStore();
+  }else if(b.dataset.adj&&has('store')){
+    const v=await uiPrompt('الرصيد الفعلي الجديد لـ «'+it.name+'»:',String(it.qty));if(v===null)return;
+    const q=numOf(v);if(!(q>=0)){toast('رصيد غير صحيح');return}
+    if(q!==it.qty){addMove(it,'adj',q-it.qty,'تسوية جرد');it.qty=q;save();renderStore()}
+  }else if(b.dataset.buy&&has('store','purch','500')){
+    const v=await uiPrompt('الكمية المطلوب شراؤها من «'+it.name+'»:','');if(v===null)return;
+    const q=numOf(v);if(!(q>0)){toast('كمية غير صحيحة');return}
+    addPur(it,q,'من المخزن');save();toast('تم إنشاء طلب الشراء');
+  }else if(b.dataset.del&&has('store')){
+    if(!await uiConfirm('حذف الصنف «'+it.name+'» من المخزن؟'))return;
+    DB.items=DB.items.filter(x=>x.id!==id);save();renderStore();
+  }
+});
+
+/* --- طلب شراء مواد الصيانة --- */
+$('#mpSend').onclick=()=>{
+  if(!has('maint'))return;
+  const name=$('#mpName').value.trim(),unit=$('#mpUnit').value.trim()||'قطعة',qty=numOf($('#mpQty').value),est=Math.max(0,Number($('#mpEst').value)||0),link=$('#mpLink').value;
+  if(!name){toast('أدخل اسم المادة');return}
+  if(!(qty>0)){toast('أدخل كمية صحيحة');return}
+  const lr=DB.maintReqs.find(x=>x.id===link);
+  DB.purReqs.unshift({id:uid(),no:nextNo('pur','PR'),at:Date.now(),by:me().name,itemId:'',name,unit,qty,est,src:'صيانة'+(lr?' - '+lr.no:''),status:'new'});
+  if(lr)(lr.replies=lr.replies||[]).push({by:me().name,at:Date.now(),text:'تم إرسال طلب شراء: '+name+' × '+qty+' '+unit});
+  save();$('#mpName').value='';$('#mpQty').value=1;$('#mpEst').value=0;renderMaint();toast('تم إرسال طلب الشراء للمشتريات');
+};
+
+/* ===== المشتريات ===== */
+function renderPur(){
+  const can=has('store','purch','500'),ok=DB.items.length>0;
+  $('#puNew').style.display=can?'':'none';
+  $('#puEmpty').style.display=ok?'none':'';$('#puForm').style.display=ok?'':'none';
+  const cur=$('#puItem').value;
+  $('#puItem').innerHTML=DB.items.map(i=>`<option value="${i.id}">${esc(i.name)} (الرصيد: ${i.qty} ${esc(i.unit)})</option>`).join('');
+  if(DB.items.some(i=>i.id===cur))$('#puItem').value=cur;
+  const f=$('#puFilter').value,list=DB.purReqs.filter(r=>!f||r.status===f);
+  $('#puBody').innerHTML=list.length?list.map(r=>{
+    let act='';
+    if(r.status==='new'&&has('purch'))act+=`<button class="btn sm" data-pap="${r.id}">اعتماد وإرسال للمدير العام</button> <button class="btn red sm" data-rj="${r.id}">رفض</button>`;
+    if(r.status==='pmok'&&has('gm'))act+=`<button class="btn sm" data-gap="${r.id}">اعتماد نهائي</button> <button class="btn red sm" data-rj="${r.id}">رفض</button>`;
+    if(r.status==='approved'&&has('purch'))act+=`<button class="btn sm" data-bt="${r.id}">تم الشراء</button>`;
+    if(r.status!=='new'&&r.status!=='rejected'&&has('store','purch','gm'))act+=`<button class="btn light sm" data-pproof="${r.id}">📎 فاتورة</button> `;
+    if(r.status==='purchased'&&has('store'))act+=`<button class="btn sm" data-rc="${r.id}">استلام بالمخزن</button>`;
+    const det=[r.supplier?'المورد: '+esc(r.supplier):'',r.price?'السعر: '+r.price:(r.est?'تقديري: '+r.est:''),r.reason?esc(r.reason):'',r.proof?attLinks(r.proof):''].filter(Boolean).join('<br>');
+    return `<tr><td>${r.no}</td><td>${fmtD(r.at)}</td><td>${esc(r.name)}</td><td>${r.qty} ${esc(r.unit)}</td><td>${esc(r.src||r.by)}</td><td>${bd(PURS,r.status)}</td><td><small>${det||'—'}</small></td><td>${act||'—'}</td></tr>`}).join('')
+    :'<tr><td colspan="8" class="muted">لا توجد طلبات شراء.</td></tr>';
+}
+$('#puFilter').onchange=()=>renderPur();
+$('#puSend').onclick=()=>{
+  if(!has('store','purch','500'))return;
+  const it=DB.items.find(x=>x.id===$('#puItem').value),q=numOf($('#puQty').value);
+  if(!it||!(q>0)){toast('تحقق من الصنف والكمية');return}
+  addPur(it,q,'طلب مباشر - '+me().name,Math.max(0,Number($('#puEst').value)||0));
+  save();$('#puQty').value=1;$('#puEst').value=0;renderPur();toast('تم إرسال طلب الشراء');
+};
+$('#puBody').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const r=DB.purReqs.find(x=>x.id===(b.dataset.pproof||b.dataset.pap||b.dataset.gap||b.dataset.rj||b.dataset.bt||b.dataset.rc));if(!r)return;
+  if(b.dataset.pproof&&has('store','purch','gm')){
+    const picked=await pickFiles();if(!picked.length)return;
+    r.proof=(r.proof||[]).concat(await readAtts(picked));save();renderPur();toast('تم رفع الفاتورة');return;
+  }
+  if(b.dataset.pap&&has('purch')&&r.status==='new'){r.status='pmok';r.pmBy=me().name;save();renderPur()}
+  else if(b.dataset.gap&&has('gm')&&r.status==='pmok'){r.status='approved';r.approvedBy=me().name;save();renderPur()}
+  else if(b.dataset.rj&&((has('purch')&&r.status==='new')||(has('gm')&&r.status==='pmok'))){const why=await uiPrompt('سبب الرفض:','');if(why===null)return;r.status='rejected';r.reason=why.trim();save();renderPur()}
+  else if(b.dataset.bt&&has('purch')&&r.status==='approved'){
+    const sup=await uiPrompt('اسم المورد:','');if(sup===null)return;
+    const pr=await uiPrompt('إجمالي السعر (اختياري، رقم):','0');if(pr===null)return;
+    r.supplier=sup.trim();r.price=Math.max(0,Number(pr)||0);r.status='purchased';r.boughtBy=me().name;save();renderPur();
+  }else if(b.dataset.rc&&has('store')&&r.status==='purchased'){
+    const it=DB.items.find(x=>x.id===r.itemId)||DB.items.find(x=>x.name===r.name)||(()=>{const n={id:uid(),name:r.name,unit:r.unit||'قطعة',qty:0,min:0};DB.items.push(n);return n})();
+    r.itemId=it.id;
+    it.qty+=r.qty;addMove(it,'in',r.qty,r.no);r.status='received';r.receivedBy=me().name;save();renderPur();toast('تم الاستلام وإضافة الكمية للمخزن');
+  }
+});
+
+/* ===== المالية والرواتب ===== */
+const PAYS={draft:'مسودة',sent:'بانتظار اعتماد المدير العام',approved:'معتمد',rejected:'مرفوض'};
+const EXP_CATS=['منصرفات تشغيلية','كهرباء وماء','نقل ومواصلات','مصاريف إدارية','أخرى'];
+function finRows(){
+  const rows=[];
+  DB.purReqs.filter(r=>r.status==='purchased'||r.status==='received').forEach(r=>rows.push({at:r.at,type:'مشتريات',desc:r.name+' × '+r.qty+(r.supplier?' - المورد: '+r.supplier:''),amt:Number(r.price)||0,ref:r.no,by:r.boughtBy,files:r.proof}));
+  DB.maintReqs.filter(r=>r.status==='done'&&r.cost).forEach(r=>rows.push({at:r.doneAt||r.at,type:'صيانة',desc:r.type+' - '+r.desc,amt:Number(r.cost)||0,ref:r.no,by:r.by2,files:r.proof}));
+  DB.payrolls.filter(p=>p.status==='approved').forEach(p=>rows.push({at:p.approvedAt||p.at,type:'رواتب',desc:'كشف رواتب '+p.month+' ('+p.lines.length+' موظف)',amt:p.lines.reduce((t,l)=>t+l.salary,0),ref:p.month,by:p.approvedBy}));
+  DB.expenses.forEach(e=>rows.push({at:e.at,type:e.cat,desc:e.desc,amt:e.amount,ref:e.id,manual:true,by:e.by,files:e.files}));
+  return rows.sort((a,b)=>b.at-a.at);
+}
+function renderFin(){
+  const rows=finRows(),sum=t=>rows.filter(r=>r.type===t).reduce((s,r)=>s+r.amt,0);
+  const all=rows.reduce((s,r)=>s+r.amt,0),pu=sum('مشتريات'),mt=sum('صيانة'),pa=sum('رواتب'),oth=all-pu-mt-pa,f=n=>n.toFixed(2);
+  $('#faCat').innerHTML=EXP_CATS.map(c=>`<option>${c}</option>`).join('');
+  $('#faNew').style.display=has('acc')?'':'none';
+  $('#faStats').innerHTML=[['المشتريات',f(pu)],['الصيانة',f(mt)],['الرواتب المعتمدة',f(pa)],['منصرفات أخرى',f(oth)],['الإجمالي',f(all)]]
+    .map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+  $('#faBody').innerHTML=rows.length?rows.map(r=>`<tr><td>${fmtD(r.at)}</td><td>${esc(r.type)}</td><td style="text-align:right">${esc(r.desc)}</td>
+    <td><b>${f(r.amt)}</b></td><td>${esc(r.by||'—')}${r.files&&r.files.length?"<br>"+attLinks(r.files):""}</td><td>${r.manual&&has('acc')?`<button class="btn red sm" data-fdel="${r.ref}">حذف</button>`:'—'}</td></tr>`).join('')
+    :'<tr><td colspan="6" class="muted">لا توجد منصرفات بعد.</td></tr>';
+  save();
+}
+$('#faAdd').onclick=async()=>{
+  if(!has('acc'))return;
+  const cat=$('#faCat').value,desc=$('#faDesc').value.trim(),amt=parseFloat($('#faAmt').value);
+  if(!desc){toast('أدخل بيان المنصرف');return}
+  if(!(amt>0)){toast('أدخل مبلغاً صحيحاً');return}
+  const atts=await readAtts([...$('#faFile').files]);
+  DB.expenses.unshift({id:uid(),at:Date.now(),cat,desc,amount:amt,by:me().name,files:atts});
+  $('#faDesc').value='';$('#faAmt').value='';$('#faFile').value='';renderFin();toast('تم تسجيل المنصرف');
+};
+$('#faBody').addEventListener('click',async e=>{
+  const id=e.target.dataset.fdel;if(!id||!has('acc'))return;
+  if(!await uiConfirm('حذف هذا المنصرف؟'))return;
+  DB.expenses=DB.expenses.filter(x=>x.id!==id);save();renderFin();
+});
+
+function renderPay(){
+  if(!DB.ui.payMonth)DB.ui.payMonth=today().slice(0,7);
+  $('#payMonth').value=DB.ui.payMonth;
+  const p=DB.payrolls.find(x=>x.month===DB.ui.payMonth),st=p?p.status:'draft';
+  const editable=has('acc')&&(!p||st==='draft'||st==='rejected');
+  $('#payEdit').style.display=editable?'':'none';
+  $('#payStatus').innerHTML=p?bd(PAYS,st)+(p.reason?` <small class="muted">سبب الرفض: ${esc(p.reason)}</small>`:''):'<span class="muted">لا يوجد كشف لهذا الشهر بعد</span>';
+  const lines=p?p.lines:[],total=lines.reduce((t,l)=>t+l.salary,0);
+  $('#payBody').innerHTML=lines.length?lines.map((l,i)=>`<tr><td>${i+1}</td><td style="text-align:right">${esc(l.name)}</td><td>${l.salary.toFixed(2)}</td>
+    <td>${editable?`<button class="btn red sm" data-pdel="${i}">حذف</button>`:''}</td></tr>`).join('')
+    +`<tr><td colspan="2"><b>الإجمالي</b></td><td><b>${total.toFixed(2)}</b></td><td></td></tr>`
+    :'<tr><td colspan="4" class="muted">لا توجد أسماء في الكشف.</td></tr>';
+  let act='';
+  if(has('acc')&&p&&(st==='draft'||st==='rejected')&&lines.length)act='<button class="btn" data-psend="1">إرسال الكشف للمدير العام للاعتماد</button>';
+  if(has('gm')&&p&&st==='sent')act='<button class="btn" data-papp="1">اعتماد الكشف</button> <button class="btn red" data-prej="1">رفض</button>';
+  $('#payActs').innerHTML=act;
+  $('#payList').innerHTML=DB.payrolls.length?[...DB.payrolls].sort((a,b)=>b.month.localeCompare(a.month)).map(x=>
+    `<tr><td>${x.month}</td><td>${x.lines.length}</td><td>${x.lines.reduce((t,l)=>t+l.salary,0).toFixed(2)}</td><td>${bd(PAYS,x.status)}</td><td>${x.approvedBy?'اعتمده: '+esc(x.approvedBy):'—'}</td></tr>`).join('')
+    :'<tr><td colspan="5" class="muted">لا توجد كشوف.</td></tr>';
+  save();
+}
+$('#payMonth').onchange=()=>{DB.ui.payMonth=$('#payMonth').value;save();renderPay()};
+$('#payAddLine').onclick=()=>{
+  if(!has('acc'))return;
+  const name=$('#payName').value.trim(),sal=parseFloat($('#paySal').value);
+  if(!name){toast('أدخل اسم الموظف');return}
+  if(!(sal>=0)){toast('أدخل الراتب');return}
+  let p=DB.payrolls.find(x=>x.month===DB.ui.payMonth);
+  if(!p){p={id:uid(),month:DB.ui.payMonth,lines:[],status:'draft',by:me().name,at:Date.now()};DB.payrolls.push(p)}
+  p.lines.push({name,salary:sal});$('#payName').value='';$('#paySal').value='';save();renderPay();
+};
+$('#payBody').addEventListener('click',e=>{
+  const i=e.target.dataset.pdel;if(i===undefined||!has('acc'))return;
+  const p=DB.payrolls.find(x=>x.month===DB.ui.payMonth);if(!p)return;
+  p.lines.splice(+i,1);save();renderPay();
+});
+$('#payActs').addEventListener('click',async e=>{
+  const p=DB.payrolls.find(x=>x.month===DB.ui.payMonth),d=e.target.dataset;if(!p)return;
+  if(d.psend&&has('acc')&&(p.status==='draft'||p.status==='rejected')){p.status='sent';p.sentBy=me().name;p.sentAt=Date.now();p.reason=''}
+  else if(d.papp&&has('gm')&&p.status==='sent'){p.status='approved';p.approvedBy=me().name;p.approvedAt=Date.now()}
+  else if(d.prej&&has('gm')&&p.status==='sent'){
+    const r=await uiPrompt('سبب رفض الكشف:','');if(r===null)return;
+    p.status='rejected';p.reason=r.trim();p.rejectedBy=me().name;
+  }else return;
+  save();renderPay();toast('تم تحديث كشف الرواتب');
+});
+
+/* ===== مؤشرات اللوحة ===== */
+function dashModules(){
+  $('#hAtt').style.display=has('700','600','500')?'':'none';
+  const a=[];
+  if(canSee('mat'))a.push(['طلبات مواد قيد الصرف',visReqs(DB.matReqs).filter(r=>r.status==='new'||r.status==='partial').length,'mat']);
+  if(canSee('maint'))a.push(['طلبات صيانة مفتوحة',visReqs(DB.maintReqs).filter(r=>r.status==='new'||r.status==='progress').length,'maint']);
+  if(canSee('pur'))a.push(['مشتريات قيد الإجراء',DB.purReqs.filter(r=>['new','approved','purchased'].includes(r.status)).length,'pur']);
+  if(canSee('store'))a.push(['أصناف تحت الحد الأدنى',DB.items.filter(i=>i.qty<=i.min).length,'store']);
+  $('#hStats2').innerHTML=a.map(x=>`<div class="stat" data-go="${x[2]}" style="cursor:pointer"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+}
+$('#hStats2').addEventListener('click',e=>{const d=e.target.closest('[data-go]');if(d)show(d.dataset.go)});
+
+/* ===== المرفقات (صور وملفات PDF) ===== */
+function pickFiles(){return new Promise(res=>{const i=document.createElement('input');i.type='file';i.multiple=true;i.accept='image/*,application/pdf';i.onchange=()=>res([...i.files]);i.addEventListener('cancel',()=>res([]));i.click()})}
+function readAtt(f){return new Promise((res,rej)=>{
+  if(f.type==='application/pdf'){
+    if(f.size>2*1024*1024)return rej(f.name+': الملف أكبر من 2MB');
+    const r=new FileReader();r.onload=()=>res({name:f.name,type:'pdf',data:r.result});r.onerror=()=>rej(f.name+': تعذر قراءة الملف');r.readAsDataURL(f);
+  }else if(f.type.startsWith('image/')){
+    const url=URL.createObjectURL(f),img=new Image();
+    img.onload=()=>{const k=Math.min(1,1400/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);res({name:f.name,type:'img',data:c.toDataURL('image/jpeg',0.75)})};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(f.name+': تعذر قراءة الصورة')};img.src=url;
+  }else rej(f.name+': نوع غير مدعوم (صورة أو PDF فقط)');
+})}
+async function readAtts(files){const out=[];for(const f of files){try{out.push(await readAtt(f))}catch(e){toast(e)}}return out}
+const attLinks=list=>(list||[]).map(a=>a.type==='pdf'?`<a href="${a.data}" download="${esc(a.name)}">📄 PDF</a>`:`<a href="${a.data}" target="_blank" rel="noopener">🖼️ صورة</a>`).join(' ');
+
+/* ===== الإشعارات ===== */
+const NAV={mat:'طلبات المواد',maint:'الصيانة',pur:'المشتريات',pay:'الرواتب'};
+function seenMap(){DB.seen=DB.seen||{};const id=me()?me().id:'';DB.seen[id]=DB.seen[id]||{};return DB.seen[id]}
+function markSeen(list){const m=seenMap();list.forEach(r=>m[r.id]=r.status);save()}
+function notifyCounts(){
+  const u=me(),cnt={};if(!u)return cnt;
+  const R=u.role,is=(...r)=>R==='admin'||r.includes(R),add=(k,n)=>{if(n)cnt[k]=(cnt[k]||0)+n};
+  const m=seenMap();
+  if(R==='700'||R==='600'){
+    const changed=arr=>arr.filter(r=>r.by===u.name&&r.status!=='new'&&m[r.id]!==r.status).length;
+    add('mat',changed(DB.matReqs));add('maint',changed(DB.maintReqs));
+  }
+  if(is('store','gm'))add('mat',DB.matReqs.filter(r=>r.status==='new'||r.status==='partial').length);
+  if(is('gm'))add('maint',DB.maintReqs.filter(r=>r.status==='new').length);
+  if(is('maint'))add('maint',DB.maintReqs.filter(r=>r.status==='approved').length);
+  if(is('purch'))add('pur',DB.purReqs.filter(r=>r.status==='new'||r.status==='approved').length);
+  if(is('gm'))add('pur',DB.purReqs.filter(r=>r.status==='pmok').length);
+  if(is('store'))add('pur',DB.purReqs.filter(r=>r.status==='purchased').length);
+  if(is('acc'))add('pay',DB.payrolls.filter(p=>p.status==='rejected').length);
+  if(is('gm'))add('pay',DB.payrolls.filter(p=>p.status==='sent').length);
+  return cnt;
+}
+function updateBadges(){
+  const cnt=notifyCounts();
+  $$('#side a[data-go]').forEach(a=>{
+    let b=a.querySelector('.nbadge');if(!b){b=document.createElement('span');b.className='nbadge';a.appendChild(b)}
+    const n=cnt[a.dataset.go]||0;b.textContent=n;b.style.display=n?'':'none';
+  });
+  const total=Object.values(cnt).reduce((s,x)=>s+x,0),bn=$('#bellN');
+  bn.textContent=total;bn.style.display=total?'':'none';
+  $('#bellPanel').innerHTML=total
+    ?Object.keys(cnt).filter(k=>cnt[k]).map(k=>`<button data-nav="${k}"><span>${NAV[k]}</span><span class="nbadge" style="position:static;margin:0">${cnt[k]}</span></button>`).join('')
+    :'<div class="muted" style="padding:10px">لا توجد إشعارات</div>';
+}
+$('#bell').onclick=e=>{e.stopPropagation();const p=$('#bellPanel');p.style.display=p.style.display==='block'?'none':'block'};
+$('#bellPanel').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;$('#bellPanel').style.display='none';show(b.dataset.nav)});
+document.addEventListener('click',()=>{$('#bellPanel').style.display='none'});
+
+/* ===== بدء التشغيل: يعود لنفس الشاشة بعد التحديث ===== */
+show(DB.ui.screen||'dash');
+</script>
+</body>
+</html>
