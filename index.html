@@ -130,6 +130,7 @@ td.r{text-align:right}
   <a data-go="fin">💰 المالية</a>
   <a data-go="pay">💵 الرواتب</a>
   <a data-go="adm">🕘 حضور موظفي الإدارة</a>
+  <a data-go="emps">📇 كشف الموظفين</a>
   <a data-go="leave">🏖️ طلب إجازة</a>
   <a data-go="proc">📑 إجراء إداري</a>
   <a data-go="users" data-admin>👤 إعدادات المستخدمين</a>
@@ -249,13 +250,14 @@ td.r{text-align:right}
           <div><label class="f">اسم الموظف</label><input type="text" id="eName"></div>
           <div><label class="f">الوظيفة</label><select id="eJob"></select></div>
           <div><label class="f">الراتب</label><input type="number" id="eSal" min="0" step="0.01"></div>
+          <div><label class="f">الرقم الوظيفي (يُولَّد تلقائياً إن ترك فارغاً)</label><input type="text" id="eNo" inputmode="numeric" autocomplete="off"></div>
         </div>
         <div style="margin-top:12px"><label class="f">توقيع الموظف (ارسم أو ارفع صورة)</label><div class="pad" id="ePad"></div></div>
         <div id="eDocs"></div>
         <div style="margin-top:12px"><button class="btn" id="eAdd">إضافة الموظف</button></div>
       </div>
       <div class="tw"><table>
-        <thead><tr><th style="width:50px">م</th><th>الموقع الرئيسي</th><th>الفرع</th><th>الاسم</th><th>الوظيفة</th><th>الراتب</th><th>التوقيع</th><th>الشهادات</th><th></th></tr></thead>
+        <thead><tr><th style="width:50px">م</th><th>الرقم الوظيفي</th><th>الموقع الرئيسي</th><th>الفرع</th><th>الاسم</th><th>الوظيفة</th><th>الراتب</th><th>التوقيع</th><th>الشهادات</th><th></th></tr></thead>
         <tbody id="eBody"></tbody>
       </table></div>
     </div>
@@ -289,6 +291,24 @@ td.r{text-align:right}
       <div class="chips" id="mChips"></div>
       <div class="tw" id="mWrap"></div>
     </div>
+  </section>
+
+  <!-- كشف الموظفين -->
+  <section class="screen" id="s-emps">
+    <div class="card">
+      <h2>كشف الموظفين</h2>
+      <p class="muted">موظفو المواقع وموظفو الإدارة في كشف واحد. فلترة بالموقع أو الرقم الوظيفي أو الاسم، ثم فتح ملفات الموظف (الشهادات وغيرها). يمكن رفع أكثر من ملف لكل نوع.</p>
+      <div class="row">
+        <div><label class="f">الموقع</label><select id="rgSite"></select></div>
+        <div><label class="f">الرقم الوظيفي</label><input type="text" id="rgNo" inputmode="numeric" autocomplete="off"></div>
+        <div><label class="f">الاسم</label><input type="text" id="rgName" autocomplete="off"></div>
+      </div>
+      <div class="tw" style="margin-top:12px"><table style="min-width:900px">
+        <thead><tr><th style="width:50px">م</th><th>الرقم الوظيفي</th><th>الاسم</th><th>الوظيفة</th><th>الموقع الرئيسي</th><th>الفرع</th><th>عدد الملفات</th><th></th></tr></thead>
+        <tbody id="rgBody"></tbody>
+      </table></div>
+    </div>
+    <div class="card" id="rgPanel" style="display:none"></div>
   </section>
 
   <!-- النسخ الاحتياطي -->
@@ -505,7 +525,7 @@ const ATT=['700','600','500','gm','admin'];
 const ACCESS={dash:null,daily:ATT,log:ATT,sum:ATT,
   mat:['700','600','500','store','gm','admin'],maint:['700','600','500','maint','gm','admin'],
   store:['store','purch','500','gm','admin'],pur:['purch','store','500','gm','admin'],
-  fin:['gm','acc','admin'],pay:['gm','acc','admin'],adm:['600','700','purch','store','maint','acc','gm','500','admin'],
+  emps:['700','600','500','gm','store','purch','acc','admin'],fin:['gm','acc','admin'],pay:['gm','acc','admin'],adm:['600','700','purch','store','maint','acc','gm','500','admin'],
   leave:null,proc:ATT,
   users:['admin'],sites:['admin'],backup:['admin']};
 function canSee(n){const a=ACCESS[n],u=me();if(u&&u.role==='maint'&&n!=='maint'&&n!=='adm')return false;return !!u&&(a===null||a.includes(u.role))}
@@ -568,7 +588,7 @@ function seedUsers(){
   });
   DB.seededV2=true;
 }
-ensureAdmin();seedUsers();save();
+normPeople();ensureAdmin();seedUsers();save();
 function isAdmin(){const u=me();return !!u&&u.role==='admin'}
 function isGlobal(u){return !!u&&['admin','500','gm','acc','store','purch','maint'].includes(u.role)}
 function visSites(){const u=me();return isGlobal(u)?DB.sites:DB.sites.filter(s=>u&&u.mainId&&s.mainId===u.mainId)}
@@ -595,6 +615,47 @@ function createPad(el){
 const uPad=createPad($('#uPad')),ePad=createPad($('#ePad'));
 
 /* ===== طلب إجازة و إجراءات إدارية (اعتماد متسلسل) ===== */
+const LEAVE_ANNUAL=30, WEEKEND=[0,6]; // الإجازة السنوية 30 يوم عمل؛ عطلة نهاية الأسبوع السبت والأحد
+const dOf=x=>new Date(x+'T00:00:00');
+const isWorkDay=d=>!WEEKEND.includes(d.getDay());
+function workDaysBetween(from,to){
+  if(!from||!to||to<from)return 0;
+  let n=0;const d=dOf(from),e=dOf(to);
+  while(d<=e){if(isWorkDay(d))n++;d.setDate(d.getDate()+1)}
+  return n;
+}
+function addWorkDays(from,n){
+  if(!from||!(n>0))return '';
+  const d=dOf(from);let c=0;
+  while(true){if(isWorkDay(d)){c++;if(c===n)break}d.setDate(d.getDate()+1)}
+  return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+}
+function annualUsed(empRef,year){
+  return (DB.leaves||[]).filter(r=>r.empRef===empRef&&r.type==='سنوية'&&r.stage!=='rejected'&&String(r.from).slice(0,4)===String(year))
+    .reduce((t,r)=>t+workDaysBetween(r.from,r.to),0);
+}
+function wfLeaveCalc(src){
+  const f=$('#leaveFrom').value,t=$('#leaveTo'),dy=$('#leaveDays'),n=parseInt(dy.value,10);
+  if((src==='days'||src==='from')&&f&&n>0)t.value=addWorkDays(f,n);
+  else if(src==='to'&&f&&t.value)dy.value=workDaysBetween(f,t.value)||'';
+  const info=[];
+  if(f&&t.value&&t.value>=f)info.push('أيام العمل: '+workDaysBetween(f,t.value)+' — أيام تقويمية: '+(Math.round((dOf(t.value)-dOf(f))/864e5)+1));
+  const emp=$('#leaveEmp').value;
+  if(emp&&$('#leaveType').value==='سنوية'){
+    const used=annualUsed(emp,(f||today()).slice(0,4));
+    info.push('رصيد الإجازة السنوية '+LEAVE_ANNUAL+' يوم عمل — المستخدم '+used+' — المتبقي '+Math.max(0,LEAVE_ANNUAL-used));
+  }
+  $('#leaveInfo').textContent=info.join(' | ');
+}
+function wfLeaveWire(){
+  $('#leaveFrom').onchange=()=>wfLeaveCalc('from');
+  $('#leaveDays').oninput=()=>wfLeaveCalc('days');
+  $('#leaveTo').onchange=()=>wfLeaveCalc('to');
+  $('#leaveEmp').onchange=()=>wfLeaveCalc('');
+  $('#leaveType').onchange=()=>wfLeaveCalc('');
+  wfLeaveCalc('');
+}
+
 const WF={
   leave:{key:'leaves',types:['سنوية','مرضية','طارئة','بدون راتب','أخرى']},
   proc:{key:'admProcs',types:['فصل','مطالبة نهاية خدمة','نقل']}
@@ -628,10 +689,12 @@ function wfRenderForm(kind){
           :`<div><label class="f">الموقع المنقول إليه (للنقل فقط)</label><select id="procTarget"><option value="">—</option>${siteOpts}</select></div>`}
    </div>
    <div class="row">
-     ${isL?`<div><label class="f">البديل</label><select id="leaveSub"><option value="">بدون بديل</option>${empOpts}</select></div>`:''}
+     ${isL?`<div><label class="f">عدد أيام العمل</label><input type="number" id="leaveDays" min="1" step="1" placeholder="مثال 30"></div><div><label class="f">البديل</label><select id="leaveSub"><option value="">بدون بديل</option>${empOpts}</select></div>`:''}
      <div><label class="f">ملاحظات</label><input type="text" id="${kind}Note"></div>
      <div style="flex:0 0 auto"><button class="btn" data-wfsub="${kind}">تقديم الطلب</button></div>
-   </div>`;
+   </div>
+   ${isL?'<div class="muted" id="leaveInfo" style="margin-top:6px"></div>':''}`;
+  if(isL)wfLeaveWire();
 }
 function wfRenderList(kind){
   const isL=kind==='leave',list=(DB[WF[kind].key]||[]).filter(wfVisible).slice().reverse();
@@ -639,7 +702,7 @@ function wfRenderList(kind){
   const act=r=>{if(!WF_ROLE[r.stage]||!has(WF_ROLE[r.stage])||!wfInScope(r))return '—';
     return `<button class="btn sm" data-wfa="approve" data-wfk="${kind}" data-wfid="${r.id}">اعتماد</button> <button class="btn red sm" data-wfa="reject" data-wfk="${kind}" data-wfid="${r.id}">رفض</button>`};
   $('#'+kind+'List').innerHTML=`<table style="min-width:1000px"><thead><tr><th>م</th><th>الموظف</th><th>الوظيفة</th><th>الموقع</th><th>النوع</th><th>${isL?'من - إلى':'تاريخ السريان'}</th><th>${isL?'البديل':'الموقع المنقول إليه'}</th><th>الحالة</th><th>الاعتمادات</th><th>إجراء</th></tr></thead><tbody>${
-    list.length?list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.empName)}</td><td>${esc(r.job)}</td><td>${esc(r.site)}</td><td>${esc(r.type)}</td><td>${isL?esc(r.from)+' — '+esc(r.to):esc(r.from)}</td><td>${esc(isL?(r.sub||'—'):(r.target||'—'))}</td><td><span class="bd ${WF_BD[r.stage]}">${WF_ST[r.stage]}</span>${r.rejectReason?`<div class="muted" style="font-size:12px">سبب الرفض: ${esc(r.rejectReason)}</div>`:''}</td><td style="font-size:12px">${ap(r)}</td><td>${act(r)}</td></tr>`).join('')
+    list.length?list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.empName)}</td><td>${esc(r.job)}</td><td>${esc(r.site)}</td><td>${esc(r.type)}</td><td>${isL?esc(r.from)+' — '+esc(r.to)+' ('+workDaysBetween(r.from,r.to)+' يوم عمل)':esc(r.from)}</td><td>${esc(isL?(r.sub||'—'):(r.target||'—'))}</td><td><span class="bd ${WF_BD[r.stage]}">${WF_ST[r.stage]}</span>${r.rejectReason?`<div class="muted" style="font-size:12px">سبب الرفض: ${esc(r.rejectReason)}</div>`:''}</td><td style="font-size:12px">${ap(r)}</td><td>${act(r)}</td></tr>`).join('')
     :'<tr><td colspan="10" class="muted">لا توجد طلبات.</td></tr>'}</tbody></table>`;
 }
 function wfRender(kind){wfRenderForm(kind);wfRenderList(kind)}
@@ -672,12 +735,21 @@ async function wfSubmit(kind){
     }
   }
   if(sub&&sub===emp){toast('البديل لا يمكن أن يكون الموظف نفسه');return}
+  let days=0;
+  if(isL){
+    days=workDaysBetween(from,to);
+    if(days<1){toast('مدة الإجازة لا تحتسب أيام عمل، تحقق من التواريخ');return}
+    if(type==='سنوية'){
+      const left=LEAVE_ANNUAL-annualUsed(p.id,from.slice(0,4));
+      if(days>left){toast('الرصيد المتبقي من الإجازة السنوية '+Math.max(0,left)+' يوم عمل فقط');return}
+    }
+  }
   const sp=sub?wfPeople().find(x=>x.id===sub):null;
   if(!await uiConfirm('تقديم الطلب لمشرف الموقع لبدء الاعتماد؟'))return;
   DB[WF[kind].key]=DB[WF[kind].key]||[];
   DB[WF[kind].key].push({id:uid(),type,empRef:p.id,empId:p.empId,empName:p.name,job:p.job,siteId:p.siteId,mainId:p.mainId,site:p.site,
     from,to:isL?to:from,sub:sp?sp.name:'',target:target?siteLabel(target):'',targetId:target?target.id:'',
-    note:$('#'+kind+'Note').value.trim(),stage:'site',by:me().name,at:Date.now(),appr:{},rejectReason:''});
+    days,note:$('#'+kind+'Note').value.trim(),stage:'site',by:me().name,at:Date.now(),appr:{},rejectReason:''});
   save();wfRender(kind);toast('تم تقديم الطلب لمشرف الموقع');
 }
 document.addEventListener('click',async e=>{
@@ -700,7 +772,7 @@ document.addEventListener('click',async e=>{
 });
 
 /* ===== التنقل ===== */
-const SCREENS=['dash','daily','log','sum','mat','maint','store','pur','fin','pay','adm','leave','proc','users','sites','backup'];
+const SCREENS=['dash','daily','log','sum','mat','maint','store','pur','fin','pay','adm','leave','proc','emps','users','sites','backup'];
 function show(name){
   if(!me()){name='login'}
   else if(!SCREENS.includes(name)||!canSee(name)){name=me()&&me().role==='maint'?'maint':'dash'}
@@ -714,6 +786,7 @@ function show(name){
   $('#userChip').textContent=u?u.name+' • '+ROLES[u.role]+(um&&!isGlobal(u)?' • '+um.name:''):'';
   if(name==='login')fillLogin();
   if(name==='adm')renderAdm();
+  if(name==='emps')renderEmps();
   if(name==='leave'||name==='proc')wfRender(name);
   if(name==='fin')renderFin();
   if(name==='pay')renderPay();
@@ -949,7 +1022,7 @@ function renderSites(){
   $('#empCard').style.display=site?'block':'none';
   $('#eJob').innerHTML=JOBS.map(j=>`<option>${j}</option>`).join('');
   renderEDocs();
-  $('#eBody').innerHTML=site&&site.employees.length?site.employees.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(mainName(site.mainId))}</td><td>${esc(site.name)}</td><td>${esc(e.name)}</td><td><select data-job="${e.id}">${JOBS.map(j=>`<option ${j===e.job?'selected':''}>${j}</option>`).join('')}</select></td><td>${e.salary!=null?Number(e.salary).toFixed(2):'—'} <button class="btn light sm" data-esal="${e.id}">تعديل</button></td><td>${e.sig?`<img class="sig" src="${e.sig}" alt="">`:'—'}</td><td>${docCell(e)}</td><td><button class="btn light sm" data-ed="${e.id}">تعديل الاسم</button> <button class="btn red sm" data-del="${e.id}">حذف</button></td></tr>`).join(''):'<tr><td colspan="9" class="muted">لا يوجد موظفون بعد.</td></tr>';
+  $('#eBody').innerHTML=site&&site.employees.length?site.employees.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.no||'—')}</td><td>${esc(mainName(site.mainId))}</td><td>${esc(site.name)}</td><td>${esc(e.name)}</td><td><select data-job="${e.id}">${JOBS.map(j=>`<option ${j===e.job?'selected':''}>${j}</option>`).join('')}</select></td><td>${e.salary!=null?Number(e.salary).toFixed(2):'—'} <button class="btn light sm" data-esal="${e.id}">تعديل</button></td><td>${e.sig?`<img class="sig" src="${e.sig}" alt="">`:'—'}</td><td>${docCell(e)}</td><td><button class="btn light sm" data-ed="${e.id}">تعديل الاسم</button> <button class="btn red sm" data-del="${e.id}">حذف</button></td></tr>`).join(''):'<tr><td colspan="10" class="muted">لا يوجد موظفون بعد.</td></tr>';
 }
 $('#mnAdd').onclick=()=>{
   const name=$('#mnName').value.trim();if(!name){toast('أدخل اسم الموقع الرئيسي');return}
@@ -982,13 +1055,16 @@ $('#eAdd').onclick=async()=>{
   const site=DB.sites.find(s=>s.id===DB.ui.eSite),name=$('#eName').value.trim();
   if(!site||!name){toast('أدخل اسم الموظف');return}
   const sal=parseFloat($('#eSal').value);if(!(sal>=0)){toast('أدخل راتب الموظف');return}
+  let no=$('#eNo').value.trim();
+  if(no&&allNos().includes(no)){toast('الرقم الوظيفي مستخدم من قبل');return}
+  if(!no)no=nextEmpNo();
   const docs={};
   for(const k of docsFor($('#eJob').value)){
-    const f=document.querySelector('[data-edoc="'+k+'"]').files[0];
-    if(f){try{docs[k]=await readAtt(f)}catch(err){toast(err)}}
+    const fs=[...document.querySelector('[data-edoc="'+k+'"]').files];
+    const got=await readAtts(fs);if(got.length)docs[k]=got;
   }
-  site.employees.push({id:uid(),name,job:$('#eJob').value,sig:ePad.get(),docs,salary:sal});save();
-  $('#eName').value='';$('#eSal').value='';ePad.clear();renderSites();toast('تمت إضافة الموظف');
+  site.employees.push({id:uid(),no,name,job:$('#eJob').value,sig:ePad.get(),docs,salary:sal});save();
+  $('#eName').value='';$('#eSal').value='';$('#eNo').value='';ePad.clear();renderSites();toast('تمت إضافة الموظف (الرقم '+no+')');
 };
 $('#eBody').addEventListener('click',async e=>{
   const id=e.target.dataset.del,site=DB.sites.find(s=>s.id===DB.ui.eSite);if(!id||!site)return;
@@ -1030,17 +1106,6 @@ $('#eBody').addEventListener('click',async e=>{
 $('#eBody').addEventListener('change',e=>{
   const id=e.target.dataset.job,site=DB.sites.find(s=>s.id===DB.ui.eSite);if(!id||!site)return;
   const emp=site.employees.find(x=>x.id===id);emp.job=e.target.value;save();renderSites();toast('تم تعديل الوظيفة');
-});
-$('#eBody').addEventListener('click',e=>{
-  const v=e.target.dataset.edocup;if(!v)return;
-  const[id,k]=v.split('|'),site=DB.sites.find(x=>x.id===DB.ui.eSite),emp=site&&site.employees.find(x=>x.id===id);
-  if(!emp)return;
-  const i=document.createElement('input');i.type='file';i.accept='image/*,application/pdf';
-  i.onchange=async()=>{
-    const f=i.files[0];if(!f)return;
-    try{emp.docs=emp.docs||{};emp.docs[k]=await readAtt(f);save();renderSites();toast('تم رفع المستند')}catch(err){toast(err)}
-  };
-  i.click();
 });
 $('#eBody').addEventListener('click',async e=>{
   const id=e.target.dataset.esal;if(!id)return;
@@ -1649,18 +1714,90 @@ const DOCS={
 };
 const docsFor=job=>Object.keys(DOCS).filter(k=>DOCS[k].jobs.includes(job));
 function renderEDocs(){
-  $('#eDocs').innerHTML=docsFor($('#eJob').value).map(k=>`<div style="margin-top:8px"><label class="f">${DOCS[k].label} (اختياري - صورة أو PDF)</label><input type="file" data-edoc="${k}" accept="image/*,application/pdf"></div>`).join('');
+  $('#eDocs').innerHTML=docsFor($('#eJob').value).map(k=>`<div style="margin-top:8px"><label class="f">${DOCS[k].label} (اختياري - صور أو PDF، يمكن اختيار أكثر من ملف)</label><input type="file" multiple data-edoc="${k}" accept="image/*,application/pdf"></div>`).join('');
 }
 $('#eJob').addEventListener('change',renderEDocs);
-function docCell(e){
-  const ks=docsFor(e.job);
-  if(!ks.length)return '<span class="muted">—</span>';
-  return ks.map(k=>{
-    const d=(e.docs||{})[k];
-    const view=d?(d.type==='pdf'?`<a href="${d.data}" download="${esc(d.name)}">📄 PDF</a>`:`<a href="${d.data}" target="_blank" rel="noopener">🖼️ صورة</a>`):'';
-    return `<div style="margin-bottom:6px;white-space:nowrap">${DOCS[k].label}: ${d?`<span class="bd done">مرفوع</span> ${view}`:'<span class="bd rejected">غير مرفوع</span>'} <button class="btn light sm" data-edocup="${e.id}|${k}">${d?'استبدال':'رفع'}</button></div>`;
-  }).join('');
+const STAFF_DOCS={contract:'عقد العمل',id:'الهوية / الإقامة',cert:'شهادات التدريب',other:'ملفات أخرى'};
+function docTypesOf(p){
+  if(p.kind==='u')return STAFF_DOCS;
+  const o={};docsFor(p.job).forEach(k=>o[k]=DOCS[k].label);o.other='ملفات أخرى';return o;
 }
+const docList=(obj,k)=>Array.isArray((obj||{})[k])?obj[k]:[];
+const docCount=obj=>Object.keys(obj||{}).reduce((n,k)=>n+docList(obj,k).length,0);
+function mainName(id){const m=DB.mainSites.find(x=>x.id===id);return m?m.name:'—'}
+function allNos(){return DB.users.map(u=>String(u.no)).concat(DB.sites.flatMap(s=>s.employees.map(e=>String(e.no||''))))}
+function nextEmpNo(){let n=1000;allNos().forEach(x=>{const v=parseInt(x,10);if(v>=n)n=v+1});return String(n)}
+function normPeople(){
+  const fix=d=>{const o=d||{};Object.keys(o).forEach(k=>{if(o[k]&&!Array.isArray(o[k]))o[k]=[o[k]]});return o};
+  DB.sites.forEach(s=>s.employees.forEach(e=>{e.docs=fix(e.docs);if(!e.no)e.no=nextEmpNo()}));
+  DB.users.forEach(u=>{u.docs=fix(u.docs)});
+}
+function docCell(e){
+  const n=docCount(e.docs);
+  return `<span class="bd ${n?'done':'rejected'}">${n} ملف</span> <button class="btn light sm" data-fopen="e:${e.id}">إدارة الملفات</button>`;
+}
+$('#eBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-fopen]');if(!b)return;
+  DB.ui.rgOpen=b.dataset.fopen;DB.ui.rgSite='';show('emps');
+});
+
+/* ===== كشف الموظفين والملفات ===== */
+function allPeople(){
+  const u0=me(),glob=isGlobal(u0),out=[];
+  DB.sites.forEach(s=>{
+    if(!(glob||s.mainId===u0.mainId))return;
+    s.employees.forEach(e=>out.push({key:'e:'+e.id,kind:'e',ref:e,no:e.no||'',name:e.name,job:e.job,main:mainName(s.mainId),branch:s.name,siteId:s.id}));
+  });
+  DB.users.filter(u=>ADM_ROLES.includes(u.role)&&(glob||u.mainId===u0.mainId))
+    .forEach(u=>out.push({key:'u:'+u.id,kind:'u',ref:u,no:u.no,name:u.name,job:ROLES[u.role],main:u.mainId?mainName(u.mainId):'—',branch:'الإدارة',siteId:''}));
+  return out;
+}
+function renderEmps(){
+  const u0=me(),sel=$('#rgSite');
+  sel.innerHTML='<option value="">كل المواقع</option><option value="ADM">موظفو الإدارة</option>'+
+    DB.sites.filter(s=>isGlobal(u0)||s.mainId===u0.mainId).map(s=>`<option value="${s.id}">${esc(siteLabel(s))}</option>`).join('');
+  sel.value=DB.ui.rgSite||'';
+  $('#rgNo').value=DB.ui.rgNo||'';$('#rgName').value=DB.ui.rgName||'';
+  const f=DB.ui.rgSite||'',no=(DB.ui.rgNo||'').trim(),nm=(DB.ui.rgName||'').trim();
+  const list=allPeople().filter(p=>(!f||(f==='ADM'?p.kind==='u':(p.kind==='e'&&p.siteId===f)))&&(!no||String(p.no).includes(no))&&(!nm||p.name.includes(nm)));
+  $('#rgBody').innerHTML=list.length?list.map((p,i)=>`<tr><td>${i+1}</td><td>${esc(p.no||'—')}</td><td>${esc(p.name)}</td><td>${esc(p.job)}</td><td>${esc(p.main)}</td><td>${esc(p.branch)}</td><td>${docCount(p.ref.docs)}</td><td><button class="btn light sm" data-rgopen="${p.key}">فتح الملفات</button></td></tr>`).join('')
+    :'<tr><td colspan="8" class="muted">لا توجد نتائج.</td></tr>';
+  const cur=rgCur();
+  $('#rgPanel').style.display=cur?'block':'none';
+  $('#rgPanel').innerHTML=cur?filesPanel(cur):'';
+}
+function rgCur(){return DB.ui.rgOpen?allPeople().find(p=>p.key===DB.ui.rgOpen):null}
+function filesPanel(p){
+  const types=docTypesOf(p),d=p.ref.docs||{},canUp=p.kind==='u'?has('admin','gm','acc'):has('700','600','500','gm','admin');
+  return `<h2>ملفات: ${esc(p.name)} <span class="muted" style="font-size:14px">— الرقم ${esc(p.no||'—')} — ${esc(p.job)} — ${esc(p.main)}${p.branch&&p.kind==='e'?' / '+esc(p.branch):''}</span></h2>`+
+    Object.keys(types).map(k=>{const arr=docList(d,k);
+      return `<div class="card" style="margin:10px 0;background:#fafcfa"><b>${esc(types[k])}</b> <span class="muted">(${arr.length} ملف)</span>
+        <div style="margin:8px 0;display:flex;gap:8px;flex-wrap:wrap">${arr.map((a,i)=>`<span class="chip">${attLinks([a])} ${canUp?`<button class="btn red sm" data-rdel="${k}|${i}">حذف</button>`:''}</span>`).join('')||'<span class="muted">لا توجد ملفات</span>'}</div>
+        ${canUp?`<div class="row"><div><input type="file" multiple accept="image/*,application/pdf" data-rfile="${k}"></div><div style="flex:0 0 auto"><button class="btn sm" data-rup="${k}">رفع الملفات</button></div></div>`:''}
+      </div>`}).join('');
+}
+function rgSetDocs(p,k,arr){p.ref.docs=p.ref.docs||{};p.ref.docs[k]=arr;save();renderEmps()}
+$('#rgSite').onchange=()=>{DB.ui.rgSite=$('#rgSite').value;save();renderEmps()};
+$('#rgNo').oninput=()=>{DB.ui.rgNo=$('#rgNo').value;renderEmps()};
+$('#rgName').oninput=()=>{DB.ui.rgName=$('#rgName').value;renderEmps()};
+$('#rgBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-rgopen]');if(!b)return;
+  DB.ui.rgOpen=b.dataset.rgopen;renderEmps();$('#rgPanel').scrollIntoView({behavior:'smooth'});
+});
+$('#rgPanel').addEventListener('click',async e=>{
+  const p=rgCur();if(!p)return;
+  const up=e.target.closest('[data-rup]'),dl=e.target.closest('[data-rdel]');
+  if(up){
+    const k=up.dataset.rup,inp=$('#rgPanel [data-rfile="'+k+'"]'),files=inp?[...inp.files]:[];
+    if(!files.length){toast('اختر ملفاً أو أكثر أولاً');return}
+    const got=await readAtts(files);
+    if(got.length){rgSetDocs(p,k,docList(p.ref.docs,k).concat(got));toast('تم رفع '+got.length+' ملف')}
+  }else if(dl){
+    const[k,i]=dl.dataset.rdel.split('|');
+    if(!await uiConfirm('حذف هذا الملف؟'))return;
+    const arr=docList(p.ref.docs,k).slice();arr.splice(+i,1);rgSetDocs(p,k,arr);
+  }
+});
 
 /* ===== بدء التشغيل: يعود لنفس الشاشة بعد التحديث ===== */
 show(DB.ui.screen||'dash');
