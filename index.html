@@ -122,7 +122,7 @@ td.r{text-align:right}
   <a data-go="dash">📊 لوحة التحكم</a>
   <a data-go="daily">📋 الحضور والانصراف اليومي</a>
   <a data-go="log">🗓️ سجل الحضور والانصراف</a>
-  <a data-go="sum">📈 تقرير الموظفين</a>
+  <a data-go="sum">📈 تقرير الحضور والانصراف</a>
   <a data-go="mat">📦 طلبات المواد</a>
   <a data-go="maint">🛠️ الصيانة</a>
   <a data-go="store">🏬 المخزن</a>
@@ -130,6 +130,8 @@ td.r{text-align:right}
   <a data-go="fin">💰 المالية</a>
   <a data-go="pay">💵 الرواتب</a>
   <a data-go="adm">🕘 حضور موظفي الإدارة</a>
+  <a data-go="leave">🏖️ طلب إجازة</a>
+  <a data-go="proc">📑 إجراء إداري</a>
   <a data-go="users" data-admin>👤 إعدادات المستخدمين</a>
   <a data-go="sites" data-admin>🏭 المواقع والموظفون</a>
   <a data-go="backup" data-admin>💾 النسخ الاحتياطي</a>
@@ -163,7 +165,7 @@ td.r{text-align:right}
       </div>
       <div id="dBanner"></div>
       <div class="tw"><table>
-        <thead><tr><th style="width:60px">م</th><th>اسم الموظف</th><th>الوظيفة</th><th>حالة الحضور</th><th>توقيع الموظف</th></tr></thead>
+        <thead><tr><th style="width:60px">م</th><th>الاسم</th><th>الوظيفة</th><th>الحالة</th><th>التوقيع</th></tr></thead>
         <tbody id="dBody"></tbody>
       </table></div>
       <div class="appr" id="dAppr"></div>
@@ -277,7 +279,7 @@ td.r{text-align:right}
   <!-- ملخص الموظفين الشهري -->
   <section class="screen" id="s-sum">
     <div class="card">
-      <h2>تقرير الموظفين حسب الفترة</h2>
+      <h2>تقرير الحضور والانصراف حسب الفترة</h2>
       <div class="row">
         <div><label class="f">الموقع</label><select id="mSite"></select></div>
         <div><label class="f">من تاريخ</label><input type="date" id="mFrom"></div>
@@ -285,10 +287,7 @@ td.r{text-align:right}
         <div style="flex:0 0 auto"><button class="btn" id="mPdf">⬇️ تصدير PDF</button></div>
       </div>
       <div class="chips" id="mChips"></div>
-      <div class="tw"><table>
-        <thead><tr><th style="width:60px">م</th><th>اسم الموظف</th><th>الوظيفة</th><th>حضور</th><th>غياب</th><th>إجازة</th><th>نسبة الحضور</th></tr></thead>
-        <tbody id="mBody"></tbody>
-      </table></div>
+      <div class="tw" id="mWrap"></div>
     </div>
   </section>
 
@@ -480,6 +479,16 @@ td.r{text-align:right}
     </div>
   </section>
 
+  <section class="screen" id="s-leave">
+    <div class="card"><h2>طلب إجازة</h2><p class="muted">يقدّمه أي موظف مسجّل (موظف موقع أو موظف إدارة). يبدأ الاعتماد بمشرف الموقع ثم مشرف المنطقة ثم مدير المتابعة ثم المدير العام.</p><div id="leaveForm"></div></div>
+    <div class="card"><h2>سجل الطلبات والاعتمادات</h2><div class="tw" id="leaveList"></div></div>
+  </section>
+
+  <section class="screen" id="s-proc">
+    <div class="card"><h2>إجراء إداري</h2><p class="muted">الفصل، مطالبة نهاية الخدمة، أو النقل لموظفي المواقع. يمر بسلسلة الاعتماد نفسها. عند الاعتماد النهائي لإجراء النقل ينتقل الموظف تلقائياً إلى الموقع المختار.</p><div id="procForm"></div></div>
+    <div class="card"><h2>سجل الطلبات والاعتمادات</h2><div class="tw" id="procList"></div></div>
+  </section>
+
 </main>
 
 <footer id="ftr">© شركة الجزيرة الخضراء لتجارة المواشي والأغنام</footer>
@@ -497,6 +506,7 @@ const ACCESS={dash:null,daily:ATT,log:ATT,sum:ATT,
   mat:['700','600','500','store','gm','admin'],maint:['700','600','500','maint','gm','admin'],
   store:['store','purch','500','gm','admin'],pur:['purch','store','500','gm','admin'],
   fin:['gm','acc','admin'],pay:['gm','acc','admin'],adm:['600','700','purch','store','maint','acc','gm','500','admin'],
+  leave:null,proc:ATT,
   users:['admin'],sites:['admin'],backup:['admin']};
 function canSee(n){const a=ACCESS[n],u=me();if(u&&u.role==='maint'&&n!=='maint'&&n!=='adm')return false;return !!u&&(a===null||a.includes(u.role))}
 function has(...r){const u=me();return !!u&&(u.role==='admin'||r.includes(u.role))}
@@ -584,8 +594,113 @@ function createPad(el){
 }
 const uPad=createPad($('#uPad')),ePad=createPad($('#ePad'));
 
+/* ===== طلب إجازة و إجراءات إدارية (اعتماد متسلسل) ===== */
+const WF={
+  leave:{key:'leaves',types:['سنوية','مرضية','طارئة','بدون راتب','أخرى']},
+  proc:{key:'admProcs',types:['فصل','مطالبة نهاية خدمة','نقل']}
+};
+const WF_ROLE={site:'700',reg:'600',mgr:'500',gm:'gm'};
+const WF_NEXT={site:'reg',reg:'mgr',mgr:'gm',gm:'approved'};
+const WF_NAME={site:'مشرف الموقع',reg:'مشرف المنطقة',mgr:'مدير المتابعة',gm:'المدير العام'};
+const WF_ST={site:'بانتظار مشرف الموقع',reg:'بانتظار مشرف المنطقة',mgr:'بانتظار مدير المتابعة',gm:'بانتظار المدير العام',approved:'معتمد',rejected:'مرفوض'};
+const WF_BD={site:'progress',reg:'progress',mgr:'progress',gm:'progress',approved:'done',rejected:'rejected'};
+const wfInScope=r=>isGlobal(me())||r.mainId===me().mainId;
+const wfVisible=r=>isGlobal(me())||r.mainId===me().mainId||r.by===me().name;
+function wfPeople(){
+  const out=[],u0=me();
+  visSites().forEach(s=>s.employees.forEach(e=>out.push({id:'e:'+e.id,empId:e.id,name:e.name,job:e.job,siteId:s.id,mainId:s.mainId,site:siteLabel(s)})));
+  DB.users.filter(u=>ADM_ROLES.includes(u.role)&&(isGlobal(u0)||u.mainId===u0.mainId))
+    .forEach(u=>out.push({id:'u:'+u.id,empId:'',name:u.name,job:ROLES[u.role],siteId:'',mainId:u.mainId,site:'الإدارة'}));
+  return out;
+}
+function wfRenderForm(kind){
+  const isL=kind==='leave',ppl=wfPeople(),td=today();
+  const empOpts=ppl.map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.job)} — ${esc(p.site)}</option>`).join('');
+  const siteOpts=DB.sites.filter(s=>isGlobal(me())||s.mainId===me().mainId).map(s=>`<option value="${s.id}">${esc(siteLabel(s))}</option>`).join('');
+  $('#'+kind+'Form').innerHTML=`
+   <div class="row">
+     <div><label class="f">الموظف</label><select id="${kind}Emp"><option value="">— اختر —</option>${empOpts}</select></div>
+     <div><label class="f">نوع ${isL?'الإجازة':'الإجراء'}</label><select id="${kind}Type">${WF[kind].types.map(t=>`<option>${t}</option>`).join('')}</select></div>
+   </div>
+   <div class="row">
+     <div><label class="f">${isL?'تاريخ بداية الإجازة':'تاريخ سريان الإجراء'}</label><input type="date" id="${kind}From" value="${td}"></div>
+     ${isL?`<div><label class="f">تاريخ نهاية الإجازة</label><input type="date" id="leaveTo" value="${td}"></div>`
+          :`<div><label class="f">الموقع المنقول إليه (للنقل فقط)</label><select id="procTarget"><option value="">—</option>${siteOpts}</select></div>`}
+   </div>
+   <div class="row">
+     ${isL?`<div><label class="f">البديل</label><select id="leaveSub"><option value="">بدون بديل</option>${empOpts}</select></div>`:''}
+     <div><label class="f">ملاحظات</label><input type="text" id="${kind}Note"></div>
+     <div style="flex:0 0 auto"><button class="btn" data-wfsub="${kind}">تقديم الطلب</button></div>
+   </div>`;
+}
+function wfRenderList(kind){
+  const isL=kind==='leave',list=(DB[WF[kind].key]||[]).filter(wfVisible).slice().reverse();
+  const ap=r=>Object.keys(WF_NAME).filter(k=>r.appr&&r.appr[k]).map(k=>`<div>${WF_NAME[k]}: ${esc(r.appr[k].name)} — بتاريخ ${fmtD(r.appr[k].at)}</div>`).join('')||'<span class="muted">—</span>';
+  const act=r=>{if(!WF_ROLE[r.stage]||!has(WF_ROLE[r.stage])||!wfInScope(r))return '—';
+    return `<button class="btn sm" data-wfa="approve" data-wfk="${kind}" data-wfid="${r.id}">اعتماد</button> <button class="btn red sm" data-wfa="reject" data-wfk="${kind}" data-wfid="${r.id}">رفض</button>`};
+  $('#'+kind+'List').innerHTML=`<table style="min-width:1000px"><thead><tr><th>م</th><th>الموظف</th><th>الوظيفة</th><th>الموقع</th><th>النوع</th><th>${isL?'من - إلى':'تاريخ السريان'}</th><th>${isL?'البديل':'الموقع المنقول إليه'}</th><th>الحالة</th><th>الاعتمادات</th><th>إجراء</th></tr></thead><tbody>${
+    list.length?list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.empName)}</td><td>${esc(r.job)}</td><td>${esc(r.site)}</td><td>${esc(r.type)}</td><td>${isL?esc(r.from)+' — '+esc(r.to):esc(r.from)}</td><td>${esc(isL?(r.sub||'—'):(r.target||'—'))}</td><td><span class="bd ${WF_BD[r.stage]}">${WF_ST[r.stage]}</span>${r.rejectReason?`<div class="muted" style="font-size:12px">سبب الرفض: ${esc(r.rejectReason)}</div>`:''}</td><td style="font-size:12px">${ap(r)}</td><td>${act(r)}</td></tr>`).join('')
+    :'<tr><td colspan="10" class="muted">لا توجد طلبات.</td></tr>'}</tbody></table>`;
+}
+function wfRender(kind){wfRenderForm(kind);wfRenderList(kind)}
+function wfApplyTransfer(r){
+  const from=DB.sites.find(s=>s.id===r.siteId),to=DB.sites.find(s=>s.id===r.targetId);
+  if(!from||!to)return;
+  const i=from.employees.findIndex(e=>e.id===r.empId);if(i<0)return;
+  const[emp]=from.employees.splice(i,1);to.employees.push(emp);
+  r.siteId=to.id;r.mainId=to.mainId;r.site=siteLabel(to);r.transferred=true;
+}
+function wfApplyEnd(r){
+  const site=DB.sites.find(s=>s.id===r.siteId);if(!site)return;
+  site.employees=site.employees.filter(e=>e.id!==r.empId);
+  r.ended=true;r.endedAt=Date.now();
+}
+async function wfSubmit(kind){
+  const isL=kind==='leave',emp=$('#'+kind+'Emp').value,type=$('#'+kind+'Type').value,from=$('#'+kind+'From').value;
+  const to=isL?$('#leaveTo').value:from,sub=isL?$('#leaveSub').value:'';
+  const p=wfPeople().find(x=>x.id===emp);
+  if(!p){toast('اختر الموظف');return}
+  if(!from){toast('حدّد التاريخ');return}
+  if(isL&&(!to||to<from)){toast('تاريخ نهاية الإجازة يجب أن يكون بعد البداية أو مساوياً لها');return}
+  let target=null;
+  if(!isL){
+    if(!p.siteId){toast('إجراءات الفصل والنقل متاحة لموظفي المواقع فقط');return}
+    if(type==='نقل'){
+      target=DB.sites.find(s=>s.id===$('#procTarget').value);
+      if(!target){toast('اختر الموقع المنقول إليه');return}
+      if(target.id===p.siteId){toast('الموقع المنقول إليه هو نفس موقع الموظف');return}
+    }
+  }
+  if(sub&&sub===emp){toast('البديل لا يمكن أن يكون الموظف نفسه');return}
+  const sp=sub?wfPeople().find(x=>x.id===sub):null;
+  if(!await uiConfirm('تقديم الطلب لمشرف الموقع لبدء الاعتماد؟'))return;
+  DB[WF[kind].key]=DB[WF[kind].key]||[];
+  DB[WF[kind].key].push({id:uid(),type,empRef:p.id,empId:p.empId,empName:p.name,job:p.job,siteId:p.siteId,mainId:p.mainId,site:p.site,
+    from,to:isL?to:from,sub:sp?sp.name:'',target:target?siteLabel(target):'',targetId:target?target.id:'',
+    note:$('#'+kind+'Note').value.trim(),stage:'site',by:me().name,at:Date.now(),appr:{},rejectReason:''});
+  save();wfRender(kind);toast('تم تقديم الطلب لمشرف الموقع');
+}
+document.addEventListener('click',async e=>{
+  const sb=e.target.closest('[data-wfsub]');if(sb){wfSubmit(sb.dataset.wfsub);return}
+  const ab=e.target.closest('[data-wfa]');if(!ab)return;
+  const kind=ab.dataset.wfk,r=(DB[WF[kind].key]||[]).find(x=>x.id===ab.dataset.wfid);
+  if(!r||!WF_ROLE[r.stage]||!has(WF_ROLE[r.stage])||!wfInScope(r)){toast('لا تملك صلاحية الاعتماد في هذه المرحلة');return}
+  if(ab.dataset.wfa==='approve'){
+    if(!await uiConfirm('اعتماد الطلب في هذه المرحلة؟'))return;
+    r.appr=r.appr||{};r.appr[r.stage]={name:me().name,at:Date.now()};
+    r.stage=WF_NEXT[r.stage];
+    if(r.stage==='approved'&&kind==='proc'&&r.type==='نقل')wfApplyTransfer(r);
+    if(r.stage==='approved'&&kind==='proc'&&r.type!=='نقل')wfApplyEnd(r);
+    toast(r.stage==='approved'?'تم الاعتماد النهائي':'تم الاعتماد وأُرسل للمرحلة التالية');
+  }else{
+    const why=await uiPrompt('سبب الرفض:','');if(why===null)return;
+    r.stage='rejected';r.rejectReason=why.trim();r.rejectedBy=me().name;toast('تم رفض الطلب');
+  }
+  save();wfRenderList(kind);updateBadges();
+});
+
 /* ===== التنقل ===== */
-const SCREENS=['dash','daily','log','sum','mat','maint','store','pur','fin','pay','adm','users','sites','backup'];
+const SCREENS=['dash','daily','log','sum','mat','maint','store','pur','fin','pay','adm','leave','proc','users','sites','backup'];
 function show(name){
   if(!me()){name='login'}
   else if(!SCREENS.includes(name)||!canSee(name)){name=me()&&me().role==='maint'?'maint':'dash'}
@@ -599,6 +714,7 @@ function show(name){
   $('#userChip').textContent=u?u.name+' • '+ROLES[u.role]+(um&&!isGlobal(u)?' • '+um.name:''):'';
   if(name==='login')fillLogin();
   if(name==='adm')renderAdm();
+  if(name==='leave'||name==='proc')wfRender(name);
   if(name==='fin')renderFin();
   if(name==='pay')renderPay();
   if(name==='dash')renderDash();
@@ -675,17 +791,18 @@ function apprBoxes(rep,site){
 function sigCell(status,sig){return sig?`<img class="sig" src="${sig}" alt="">`:'<span class="muted">—</span>'}
 
 /* ===== 2: الحضور اليومي ===== */
+const newEmp=(site,rep)=>!!site&&!!rep&&site.employees.some(e=>!(rep.rows||[]).some(r=>r.id===e.id));
 function dailyState(){
   const site=DB.sites.find(s=>s.id===DB.ui.dSite),date=DB.ui.dDate;
   const rep=site&&DB.reports[site.id+'|'+date];
-  return{site,date,rep,sub:!!(rep&&rep.stage==='approved')};
+  return{site,date,rep,sub:!!(rep&&rep.stage==='approved'&&!newEmp(site,rep))};
 }
 function renderDaily(){
   DB.ui.dDate=$('#dDate').value||DB.ui.dDate||today();$('#dDate').value=DB.ui.dDate;
   DB.ui.dSite=fillSites($('#dSite'),DB.ui.dSite);
   const{site,date,rep,sub}=dailyState(),canSub=has('700','600'),stg=(rep&&rep.stage)||'';
   let rows=[];
-  if(sub)rows=rep.rows;
+  if(sub){rows=rep.rows.slice();if(site)site.employees.forEach(e=>{if(!rows.some(r=>r.id===e.id))rows.push({id:e.id,name:e.name,job:e.job,sig:e.sig,status:''})})}
   else if(site)rows=site.employees.map(e=>({id:e.id,name:e.name,job:e.job,sig:e.sig,status:(rep&&rep.status||{})[e.id]||''}));
   const isAdm=isAdminU(),lock=(sub&&!isAdm)||!canSub;
   $('#dBody').innerHTML=rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.job)}</td>
@@ -698,6 +815,8 @@ function renderDaily(){
   let ban='';
   if(sub){
     ban=`<div class="banner ok">✔ معتمد نهائياً من المدير العام (${fmtD(rep.gmAt||rep.at)}) — مقفل. لا يُعاد تقديمه أو تعديله إلا من مدير النظام.</div>`;
+  }else if(rep&&rep.submitted&&stg==='approved'){
+    ban=`<div class="banner info">تمت إضافة موظفين جدد بعد الاعتماد. سجّل حضورهم ثم أعد التقديم ليمر على سلسلة الاعتماد من جديد.</div>`;
   }else if(rep&&rep.submitted){
     ban=`<div class="banner info">آخر تقديم: ${fmtD(rep.at)} بواسطة ${esc(rep.by)} — ${stg?'بانتظار اعتماد '+names[stg]:'بانتظار إعادة التقديم بعد الرفض'}. يمكن التعديل وإعادة التقديم حتى الاعتماد النهائي.</div>`;
     if((stg==='reg'&&has('600'))||(stg==='mgr'&&has('500'))||(stg==='gm'&&has('gm')))
@@ -980,15 +1099,33 @@ function sumData(siteId,from,to){
   return{list:order.map(k=>map[k]),days};
 }
 const pct=r=>{const t=r.P+r.A+r.V;return t?Math.round(r.P/t*100)+'%':'—'};
+function sumGrid(siteId,from,to){
+  const site=DB.sites.find(s=>s.id===siteId),dates=rangeDates(from,to);
+  const map={},order=[];
+  const row=(k,name,job)=>{if(!map[k]){map[k]={name,job,cells:{},P:0,A:0,V:0};order.push(k)}return map[k]};
+  if(site)site.employees.forEach(e=>row(e.id,e.name,e.job));
+  dates.forEach(date=>{const rep=DB.reports[siteId+'|'+date];if(!rep||!rep.submitted)return;
+    rep.rows.forEach(r=>{if(!r.status)return;const x=row(r.id||r.name,r.name,r.job);x.cells[date]=r.status;x[r.status]++})});
+  return{dates,rows:order.map(k=>map[k])};
+}
+function sumTable(g,small){
+  const fs=small?'font-size:9px;':'font-size:13px;',pd=small?'padding:2px 3px;':'padding:6px 8px;';
+  const head=`<tr><th style="${pd}">اسم الموظف</th>${g.dates.map(d=>`<th style="${pd}">${+d.slice(8)}</th>`).join('')}<th style="${pd}">ملاحظات</th></tr>`;
+  const body=g.rows.length?g.rows.map(r=>`<tr><td style="${pd}white-space:nowrap">${esc(r.name)}</td>${g.dates.map(d=>{const v=r.cells[d]||'';return `<td style="${pd}text-align:center;font-weight:700">${v}</td>`}).join('')}<td style="${pd}"></td></tr>`).join('')
+    :`<tr><td colspan="${g.dates.length+2}" class="muted">لا توجد بيانات.</td></tr>`;
+  return `<table style="${fs}"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
 function renderSum(){
   DB.ui.mSite=fillSites($('#mSite'),DB.ui.mSite);
   const t=today();
   DB.ui.mFrom=$('#mFrom').value||DB.ui.mFrom||t.slice(0,8)+'01';$('#mFrom').value=DB.ui.mFrom;
   DB.ui.mTo=$('#mTo').value||DB.ui.mTo||t;$('#mTo').value=DB.ui.mTo;
   const span=rangeDates(DB.ui.mFrom,DB.ui.mTo).length,ok=span>0&&span<=366;
-  const d=DB.ui.mSite&&ok?sumData(DB.ui.mSite,DB.ui.mFrom,DB.ui.mTo):{list:[],days:0};
-  $('#mBody').innerHTML=d.list.length?d.list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.job)}</td><td>${r.P}</td><td>${r.A}</td><td>${r.V}</td><td><b>${pct(r)}</b></td></tr>`).join(''):'<tr><td colspan="7" class="muted">لا توجد بيانات.</td></tr>';
-  $('#mChips').innerHTML=`<span class="chip">${ok?'عدد الأيام المقدَّم عنها تقارير: '+d.days:'اختر فترة صحيحة (من تاريخ قبل إلى تاريخ، بحد أقصى 366 يوماً)'}</span>`;
+  const on=!!DB.ui.mSite&&ok;
+  const g=on?sumGrid(DB.ui.mSite,DB.ui.mFrom,DB.ui.mTo):{dates:[],rows:[]};
+  $('#mWrap').innerHTML=on?sumTable(g,false):`<div class="muted" style="padding:12px">${ok?'اختر الموقع':'اختر فترة صحيحة (من تاريخ قبل إلى تاريخ، بحد أقصى 366 يوماً)'}</div>`;
+  const days=g.dates.filter(d=>{const r=DB.reports[DB.ui.mSite+'|'+d];return r&&r.submitted}).length;
+  $('#mChips').innerHTML=`<span class="chip">${on?'عدد الأيام المقدَّم عنها تقارير: '+days:'الرموز: P حضور — A غياب — V إجازة'}</span>`;
   save();
 }
 $('#mSite').onchange=()=>{DB.ui.mSite=$('#mSite').value;renderSum()};
@@ -997,11 +1134,10 @@ $('#mTo').onchange=()=>{DB.ui.mTo=$('#mTo').value;save();renderSum()};
 $('#mPdf').onclick=()=>{
   const site=DB.sites.find(x=>x.id===DB.ui.mSite);
   if(!site){toast('اختر موقعاً أولاً');return}
-  const from=DB.ui.mFrom,to=DB.ui.mTo,d=sumData(site.id,from,to);
+  const from=DB.ui.mFrom,to=DB.ui.mTo,g=sumGrid(site.id,from,to);
   $('#printArea').innerHTML=`<h1>${COMPANY}</h1>
-   <div class="pl"><span>تقرير حضور الموظفين — الموقع: ${esc(siteLabel(site))}</span><span>الفترة: من ${from} إلى ${to}</span></div>
-   <table><thead><tr><th>م</th><th>اسم الموظف</th><th>الوظيفة</th><th>حضور</th><th>غياب</th><th>إجازة</th><th>نسبة الحضور</th></tr></thead><tbody>${d.list.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.job)}</td><td>${r.P}</td><td>${r.A}</td><td>${r.V}</td><td>${pct(r)}</td></tr>`).join('')}</tbody></table>`;
-  const old=document.title;document.title=`تقرير الحضور - ${site.name} - ${from} إلى ${to}`;
+   <div class="pl"><span>تقرير الحضور والانصراف — الموقع: ${esc(siteLabel(site))}</span><span>الفترة: من ${from} إلى ${to}</span></div>`+sumTable(g,true);
+  const old=document.title;document.title=`تقرير الحضور والانصراف - ${site.name} - ${from} إلى ${to}`;
   setTimeout(()=>{window.print();document.title=old},100);
 };
 
@@ -1464,7 +1600,7 @@ async function readAtts(files){const out=[];for(const f of files){try{out.push(a
 const attLinks=list=>(list||[]).map(a=>a.type==='pdf'?`<a href="${a.data}" download="${esc(a.name)}">📄 PDF</a>`:`<a href="${a.data}" target="_blank" rel="noopener">🖼️ صورة</a>`).join(' ');
 
 /* ===== الإشعارات ===== */
-const NAV={daily:'الحضور اليومي',mat:'طلبات المواد',maint:'الصيانة',pur:'المشتريات',pay:'الرواتب'};
+const NAV={daily:'الحضور اليومي',mat:'طلبات المواد',maint:'الصيانة',pur:'المشتريات',pay:'الرواتب',leave:'طلب إجازة',proc:'إجراء إداري'};
 function seenMap(){DB.seen=DB.seen||{};const id=me()?me().id:'';DB.seen[id]=DB.seen[id]||{};return DB.seen[id]}
 function markSeen(list){const m=seenMap();list.forEach(r=>m[r.id]=r.status);save()}
 function notifyCounts(){
@@ -1485,6 +1621,7 @@ function notifyCounts(){
   if(is('purch'))add('pur',DB.purReqs.filter(r=>r.status==='new'||r.status==='approved').length);
   if(is('gm'))add('pur',DB.purReqs.filter(r=>r.status==='pmok').length);
   if(is('store'))add('pur',DB.purReqs.filter(r=>r.status==='purchased').length);
+  ['leave','proc'].forEach(k=>add(k,(DB[WF[k].key]||[]).filter(r=>WF_ROLE[r.stage]&&is(WF_ROLE[r.stage])&&(isGlobal(u)||r.mainId===u.mainId)).length));
   return cnt;
 }
 function updateBadges(){
